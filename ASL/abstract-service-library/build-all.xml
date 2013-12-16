@@ -1,0 +1,77 @@
+<project name="Abstract-Service-Library" default="dist" basedir=".">
+	<property name="version" value="2.3.0-alpha" />
+	<property name="abstract-service-library" value="abstract-service-library-${version}" />
+	<property name="build" location="build" />
+	<property name="dist" location="dist/${abstract-service-library}" />
+	<property name="src" location="src/main/java" />
+	<property name="build.classes" location="${build}/classes" />
+	<property name="build.lib" location="${build}/lib" />
+	<property name="abstract-service-library-jar" location="${build.lib}/${abstract-service-library}.jar" />
+	<property name="abstract-service-library-source-jar" location="${build.lib}/${abstract-service-library}-source.jar" />
+	<property name="abstract-service-library-javadoc-jar" location="${build.lib}/${abstract-service-library}-javadoc.jar" />
+	<path id="AbstractServiceLibrary.classpath">
+	    <pathelement location="bin"/>
+	    <pathelement location="lib/log4j-1.2.17.jar"/>
+	    <pathelement location="lib/gson-2.2.1.jar"/>
+	    <pathelement location="lib/ux-library-0.2.0.jar"/>
+	</path>
+
+	<target name="init">
+		<tstamp />
+	</target>
+
+	<target name="build" depends="init">
+		<mkdir dir="${build.classes}" />
+		<javac srcdir="${src}" destdir="${build.classes}" source="1.7" target="1.7" classpathref="AbstractServiceLibrary.classpath" />
+	</target>
+
+	<target name="jar" depends="clean, build">
+		<mkdir dir="${build.lib}" />
+		<jar jarfile="${abstract-service-library-jar}">
+			<fileset dir="${build.classes}" />
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Implementation-Title" value="Abstract Service Library" />
+			</manifest>
+		</jar>
+		<jar destfile="${abstract-service-library-source-jar}">
+			<fileset dir="${src}" includes="**/*.java" />
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Implementation-Title" value="Abstract Service Library" />
+			</manifest>
+		</jar>		
+	</target>
+
+	<target name="javadoc" depends="init">
+		<property name="javadoc.dir" location="/home/ye/Desktop/docs/api" />
+		<javadoc sourcepath="${src}" destdir="${dist}/api" author="true" version="true" use="true" windowtitle="Abstract Service Library">
+			<doctitle>
+				<![CDATA[<h1>Abstract Service Library</h1>]]>
+			</doctitle>
+			<bottom>
+				<![CDATA[<i>This library is a work of NISE organization User-eXperience team.</i>]]>
+			</bottom>
+			<link offline="true" href="http://docs.oracle.com/javase/7/docs/api/" packagelistLoc="${javadoc.dir}" />
+		</javadoc>
+		<jar destfile="${abstract-service-library-javadoc-jar}">
+			<fileset dir="${dist}/api" />
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Implementation-Title" value="Abstract Service Library" />
+			</manifest>
+		</jar>		
+	</target>
+
+	<target name="dist" depends="jar, javadoc">
+		<mkdir dir="${dist}" />
+		<copy file="${abstract-service-library-jar}" todir="${dist}" />
+		<copy file="${abstract-service-library-source-jar}" todir="${dist}" />
+		<copy file="${abstract-service-library-javadoc-jar}" todir="${dist}" />
+	</target>
+
+	<target name="clean">
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+	</target>
+</project>

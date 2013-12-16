@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry including="**/*.java" kind="src" output="target/test-classes" path="src/test/java"/>
+	<classpathentry including="**/*.java" kind="src" path="src/main/java"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="var" path="M2_REPO/com/google/code/gson/gson/2.2.1/gson-2.2.1.jar" sourcepath="M2_REPO/com/google/code/gson/gson/2.2.1/gson-2.2.1-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/ye/.m2/repository/com/google/code/gson/gson/2.2.1/gson-2.2.1-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/log4j/log4j/1.2.17/log4j-1.2.17.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/ye/.m2/repository/log4j/log4j/1.2.17/log4j-1.2.17-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/org/nise/ux/lib/ux-library/0.2.0/ux-library-0.2.0.jar" sourcepath="M2_REPO/org/nise/ux/lib/ux-library/0.2.0/ux-library-0.2.0-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/ye/.m2/repository/org/nise/ux/lib/ux-library/0.2.0/ux-library-0.2.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="var" path="M2_REPO/commons-lang/commons-lang/2.6/commons-lang-2.6.jar" sourcepath="M2_REPO/commons-lang/commons-lang/2.6/commons-lang-2.6-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/home/ye/.m2/repository/commons-lang/commons-lang/2.6/commons-lang-2.6-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>
