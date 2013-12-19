@@ -18,6 +18,7 @@ org/nise/ux/asl/run/WorkerNode.class
 org/nise/ux/asl/face/DataConnection.class
 org/nise/ux/asl/lib/DataStream.class
 org/nise/ux/asl/run/WorkersTreeDecriptor.class
+org/nise/ux/asl/data/ServiceException.class
 org/nise/ux/asl/run/ServiceServerAbstract$Configurations.class
 org/nise/ux/asl/face/WorkerFactory.class
 org/nise/ux/asl/run/ListenerNode.class

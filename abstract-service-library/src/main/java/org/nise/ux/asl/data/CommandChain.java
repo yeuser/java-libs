@@ -34,4 +34,6 @@ public @interface CommandChain {
   String after();
 
   String name();
+
+  boolean withInputs() default false;
 }

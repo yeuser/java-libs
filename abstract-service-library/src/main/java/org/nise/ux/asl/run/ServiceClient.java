@@ -7,6 +7,7 @@ import java.util.concurrent.Semaphore;
 import org.apache.log4j.Logger;
 import org.nise.ux.asl.data.CommandChain;
 import org.nise.ux.asl.data.MapCommand;
+import org.nise.ux.asl.data.ServiceException;
 import org.nise.ux.asl.data.ServiceResponse;
 import org.nise.ux.asl.face.Worker;
 import org.nise.ux.asl.face.WorkerFactory;
@@ -64,7 +65,7 @@ public class ServiceClient implements Closeable {
             if (!closed) {
               try {
                 IndexedData<ServiceResponse> response = dataStream.recieveReturn();
-                Logger.getLogger(ServiceClient.class).info("dataStream.recieve==" + response.index + " " + response.data);
+                Logger.getLogger(ServiceClient.class).info("dataStream.recieve==" + response.index + " " + (response.data == null ? null : response.data.getDataAsJson()) + " " + (response.data == null ? null : response.data.getThrowableAsString()));
                 waitList.put(response.data, response.index);
               } catch (IOException e) {
                 Logger.getLogger(ServiceClient.class).error("Error while recieving response.", e);
@@ -102,17 +103,19 @@ public class ServiceClient implements Closeable {
    * @param data
    *          input arguments
    * @return server-side service return object
-   * @throws Throwable
-   *           the Exception/Error that has occurred during execution of service.
+   * @throws ServiceException
+   *           The Exception/Error that has occurred during execution of service.
+   * @throws IOException
+   *           Occurs when Connection to server is dropped or lost.
    */
-  public <RD> RD invokeServiceCommand(TypeToken<RD> type4Return, String command, Object... data) throws Throwable {
+  public <RD> RD invokeServiceCommand(TypeToken<RD> type4Return, String command, Object... data) throws ServiceException, IOException {
     ServiceResponse response = __invokeServiceCommand(command, data);
-    if (response.throwable != null)
-      throw response.throwable;
+    if (response.getThrowable() != null)
+      throw new ServiceException(response.getThrowable());
     try {
-      return new Gson().fromJson(response.data, type4Return.getType());
+      return response.getData(type4Return);
     } catch (Throwable t) {
-      Logger.getLogger(getClass()).error("response.data=" + response.data + " command=" + command + " data=" + new Gson().toJson(data), t);
+      Logger.getLogger(getClass()).error("response.data=" + response.getDataAsJson() + " command=" + command + " data=" + new Gson().toJson(data), t);
       throw t;
     }
   }
@@ -127,37 +130,71 @@ public class ServiceClient implements Closeable {
    * @param data
    *          input arguments
    * @return server-side service return object
-   * @throws Throwable
-   *           the Exception/Error that has occurred during execution of service.
+   * @throws ServiceException
+   *           The Exception/Error that has occurred during execution of service.
+   * @throws IOException
+   *           Occurs when Connection to server is dropped or lost.
    */
-  public <RD> RD invokeServiceCommand(Class<RD> class4Return, String command, Object... data) throws Throwable {
+  public <RD> RD invokeServiceCommand(Class<RD> class4Return, String command, Object... data) throws ServiceException, IOException {
     ServiceResponse response = __invokeServiceCommand(command, data);
-    if (response.throwable != null)
-      throw response.throwable;
+    if (response.getThrowable() != null)
+      throw new ServiceException(response.getThrowable());
     try {
-      return new Gson().fromJson(response.data, class4Return);
+      return response.getData(class4Return);
     } catch (Throwable t) {
-      Logger.getLogger(getClass()).error("response.data=" + response.data + " command=" + command + " data=" + new Gson().toJson(data), t);
+      Logger.getLogger(getClass()).error("response.data=" + response.getDataAsJson() + " command=" + command + " data=" + new Gson().toJson(data), t);
       throw t;
     }
   }
 
   private int cnt = 0;
 
-  private ServiceResponse __invokeServiceCommand(String command, Object... data) throws InterruptedException, IOException {
-    int index = waitList.reserveIndex();
-    lock.acquire();
+  private ServiceResponse __invokeServiceCommand(String command, Object... data) throws IOException {
+    boolean inited = false;
+    int index = -1;
+    while (!inited) {
+      try {
+        index = waitList.reserveIndex();
+        inited = true;
+      } catch (InterruptedException e) {
+        Thread.yield();
+      }
+    }
+    inited = false;
+    while (!inited) {
+      try {
+        lock.acquire();
+        inited = true;
+      } catch (InterruptedException e) {
+        Thread.yield();
+      }
+    }
     cnt++;
     lock.release();
     Logger.getLogger(ServiceClient.class).info("Already Inside:" + cnt + " started dataStream.sendCommand(" + command + "," + new Gson().toJson(data) + "," + index + ");");
     dataStream.sendCommand(index, command, data);
     wait_lock.release();
     ServiceResponse response = waitList.get(index);
-    waitList.releaseReserve(index);
-    lock.acquire();
+    while (!inited) {
+      try {
+        waitList.releaseReserve(index);
+        inited = true;
+      } catch (InterruptedException e) {
+        Thread.yield();
+      }
+    }
+    inited = false;
+    while (!inited) {
+      try {
+        lock.acquire();
+        inited = true;
+      } catch (InterruptedException e) {
+        Thread.yield();
+      }
+    }
     cnt--;
     lock.release();
-    Logger.getLogger(ServiceClient.class).info("Already Inside:" + cnt + " ended dataStream.sendCommand(" + command + "," + new Gson().toJson(data) + "," + index + ") with response=" + response);
+    Logger.getLogger(ServiceClient.class).info("Already Inside:" + cnt + " ended dataStream.sendCommand(" + command + "," + new Gson().toJson(data) + "," + index + ") with response=" + new Gson().toJson(response));
     return response;
   }
 

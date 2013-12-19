@@ -1,6 +1,8 @@
 package org.nise.ux.asl.run;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +64,7 @@ class WorkerNode extends DistributerNode {
 
   private void invoke(DataConnection dataConnection, String command) {
     Method method = commandMethodMap.get(command);
-    Class<?>[] input_args = method.getParameterTypes();
+    Type[] input_args = method.getGenericParameterTypes();
     Object[] args = dataConnection.getRequestArgs(input_args);
     try {
       Object obj = method.invoke(worker, args);
@@ -72,7 +74,15 @@ class WorkerNode extends DistributerNode {
       } catch (Throwable t) {
         Logger.getLogger(WorkerNode.class).error(t.getMessage(), t);
       }
-      invokeAfter(command, obj, null);
+      invokeAfter(command, obj, null, args);
+    } catch (InvocationTargetException ite) {
+      Logger.getLogger(WorkerNode.class).error(ite.getMessage(), ite);
+      try {
+        dataConnection.send(new ServiceResponse(ite.getCause()));
+      } catch (Throwable t2) {
+        Logger.getLogger(WorkerNode.class).error(t2.getMessage(), t2);
+      }
+      invokeAfter(command, null, ite.getCause(), args);
     } catch (Throwable t) {
       Logger.getLogger(WorkerNode.class).error(t.getMessage(), t);
       try {
@@ -80,22 +90,38 @@ class WorkerNode extends DistributerNode {
       } catch (Throwable t2) {
         Logger.getLogger(WorkerNode.class).error(t2.getMessage(), t2);
       }
-      invokeAfter(command, null, t);
+      invokeAfter(command, null, t, args);
     }
   }
 
-  private void invokeAfter(String commandName, Object returnObject, Throwable throwable) {
+  private void invokeAfter(String commandName, Object returnObject, Throwable throwable, Object... args) {
     List<Method> methods = commandChainMethodMap.get(commandName);
     if (methods != null) {
       for (Method method : methods) {
-        CommandChain methodAnno = method.getAnnotation(CommandChain.class);
+        CommandChain commandChain = method.getAnnotation(CommandChain.class);
         try {
-          Object obj = method.invoke(worker, returnObject, throwable);
-          Logger.getLogger(WorkerNode.class).trace("@worker= " + name + " invoked {{" + method.toString() + "}} with args={" + returnObject + "," + throwable + "} & returned obj=" + obj);
-          invokeAfter(methodAnno.name(), obj, null);
+          if (commandChain.withInputs()) {
+            Object[] _args = new Object[args.length + 2];
+            _args[0] = returnObject;
+            _args[1] = throwable;
+            System.arraycopy(args, 0, _args, 2, args.length);
+            Object obj = method.invoke(worker, _args);
+            Logger.getLogger(WorkerNode.class).trace("@worker= " + name + " invoked {{" + method.toString() + "}} with args={" + returnObject + "," + throwable + "} & returned obj=" + obj);
+            invokeAfter(commandChain.name(), obj, null, returnObject, throwable, args);
+          } else {
+            Object obj = method.invoke(worker, returnObject, throwable);
+            Logger.getLogger(WorkerNode.class).trace("@worker= " + name + " invoked {{" + method.toString() + "}} with args={" + returnObject + "," + throwable + "} & returned obj=" + obj);
+            invokeAfter(commandChain.name(), obj, null, returnObject, throwable);
+          }
+        } catch (InvocationTargetException ite) {
+          Logger.getLogger(WorkerNode.class).error(ite.getMessage(), ite);
+          invokeAfter(commandChain.name(), null, ite.getCause(), args);
+        } catch (IllegalArgumentException ite) {
+          Logger.getLogger(WorkerNode.class).error("" + method.getGenericParameterTypes().length, ite);
+          invokeAfter(commandChain.name(), null, ite.getCause(), args);
         } catch (Throwable t) {
           Logger.getLogger(WorkerNode.class).error(t.getMessage(), t);
-          invokeAfter(methodAnno.name(), null, t);
+          invokeAfter(commandChain.name(), null, t, args);
         }
       }
     }
