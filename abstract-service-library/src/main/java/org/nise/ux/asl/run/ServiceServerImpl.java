@@ -28,7 +28,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
   protected List<String>                            workersNameList            = new ArrayList<String>();
   protected List<ListenerNode>                      aslListeners               = new ArrayList<ListenerNode>();
   protected List<RequestFetcherNode>                aslRequestFetchers         = new ArrayList<RequestFetcherNode>();
-  private final RoundQueue<DataConnection>          rootWorkerQueue;
+  private final QueueFace<DataConnection>           rootWorkerQueue;
   private final String                              rootWorkerName;
   private RoundQueue<DataStream>                    aslRequestFetcherQueue;
   private int[]                                     fetcherNo                  = { 1, 1000 };
@@ -56,15 +56,13 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       rootWorkerName = l1Nodes.get(0).getName();
     } else {
       String distrName = ASL_STRUCTURE_HUB + distributerId++;
-      rootWorkerQueue = createWorkerQueue(distrName);
+      RoundQueue<DataConnection> rootWorkerRoundQueue = createWorkerQueue(distrName);
       rootWorkerName = distrName;
-      ASLStructureHub listASLDistributer = new ASLStructureHub(null, distrName, new int[] { 1, 1000 }, rootWorkerQueue);
-      //      DistributerNode routeNode = new DistributerNode(distributerId++, Worker_iQueues.get(distrName));
+      ASLStructureHub listASLDistributer = new ASLStructureHub(null, distrName, new int[] { 1, 1000 }, rootWorkerRoundQueue);
+      rootWorkerQueue = new RoundQueue2QueueFace(listASLDistributer, rootWorkerRoundQueue);
       addWorkerCompany(distrName, listASLDistributer);
       for (WorkersTreeDecriptor node : l1Nodes) {
-        RoundQueue<DataConnection> childWorkerQueue = initWorkerList(listASLDistributer, node);
-        listASLDistributer.addNextNodeHub(childWorkerQueue);
-        System.out.println(distrName + " > " + node.getName());
+        /* QueueFace<DataConnection> childWorkerQueue = */initWorkerList(listASLDistributer, node);
       }
     }
   }
@@ -97,11 +95,15 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     return workersTreeDecriptor;
   }
 
-  private RoundQueue<DataConnection> initWorkerList(ASLStructureHub parent, WorkersTreeDecriptor workersTreeDecriptor) {
+  private QueueFace<DataConnection> initWorkerList(ASLStructureHub parent, WorkersTreeDecriptor workersTreeDecriptor) {
     String workerName = workersTreeDecriptor.getName();
     WorkerFactory workerFactory = workersTreeDecriptor.getWorkerFactory();
     List<WorkersTreeDecriptor> workerList = workersTreeDecriptor.getNextSet();
     RoundQueue<DataConnection> workerQueue = createWorkerQueue(workerName);
+    if (parent != null) {
+      parent.addNextNodeHub(workerQueue);
+      System.out.println(parent.name + " > " + workersTreeDecriptor.getName());
+    }
     int[] range = workersTreeDecriptor.getRange();
     ASLStructureHub aslNode;
     if (workerFactory == null) {
@@ -109,6 +111,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     } else {
       aslNode = new ASLStructureHub(parent, workerName, range, workerFactory, workerQueue);
     }
+    QueueFace<DataConnection> workerQueueFace = new RoundQueue2QueueFace(aslNode, workerQueue);
     addWorkerCompany(workerName, aslNode);
     if (workerList.size() > 1) {
       String distrName = ASL_STRUCTURE_HUB + distributerId++;
@@ -118,18 +121,14 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       System.out.println(workerName + " > " + distrName);
       addWorkerCompany(distrName, aslMiddleNode);
       for (WorkersTreeDecriptor node : workerList) {
-        RoundQueue<DataConnection> childWorkerQueue = initWorkerList(aslMiddleNode, node);
-        aslMiddleNode.addNextNodeHub(childWorkerQueue);
-        System.out.println(distrName + " > " + node.getName());
+        /* QueueFace<DataConnection> childWorkerQueue = */initWorkerList(aslMiddleNode, node);
       }
     } else {
       if (workerList.size() == 1) {
-        RoundQueue<DataConnection> childWorkerQueue = initWorkerList(aslNode, workerList.get(0));
-        aslNode.addNextNodeHub(childWorkerQueue);
-        System.out.println(workerName + " > " + workerList.get(0).getName());
+        /* QueueFace<DataConnection> childWorkerQueue = */initWorkerList(aslNode, workerList.get(0));
       }
     }
-    return workerQueue;
+    return workerQueueFace;
   }
 
   private void addWorkerCompany(String workerName, ASLStructureHub aslNode) {
@@ -480,6 +479,16 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       }
       return true;
     }
+
+    @Override
+    public String[] getCommands() {
+      return aslStructureHub.possibleCommands.toArray(new String[] {});
+    }
+
+    @Override
+    public boolean hasCommand(String command) {
+      return aslStructureHub.hasCommand(command);
+    }
   }
 
   class RoundQueue2QueueFace implements QueueFace<DataConnection> {
@@ -502,6 +511,16 @@ public class ServiceServerImpl extends ServiceServerAbstract {
         return queue.syncPush(dataConnection);
       }
       return true;
+    }
+
+    @Override
+    public String[] getCommands() {
+      return aslStructureHub.possibleCommands.toArray(new String[] {});
+    }
+
+    @Override
+    public boolean hasCommand(String command) {
+      return aslStructureHub.hasCommand(command);
     }
   }
 

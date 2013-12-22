@@ -64,9 +64,11 @@ class DistributerNode extends Living {
   protected void handleDataConnection(DataConnection dataConnection) {
     Logger.getLogger(DistributerNode.class).debug("handleDataConnection: command=" + dataConnection.getCommand() + " index=" + dataConnection.getIndex() + " dataConnection=" + dataConnection);
     for (QueueFace<DataConnection> consumerQueue : consumersQueue) {
-      while (!consumerQueue.push(dataConnection)) {
-        // Waiting System in Queue couldn't handle something, we handle it here.
-        // Possibility of this kind of error is one in million...
+      if (consumerQueue.hasCommand(dataConnection.getCommand())) {
+        while (!consumerQueue.push(dataConnection)) {
+          // Waiting System in Queue couldn't handle something, we handle it here.
+          // Possibility of this kind of error is one in million...
+        }
       }
     }
   }

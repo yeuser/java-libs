@@ -4,4 +4,8 @@ interface QueueFace<T> {
   T pop();
 
   boolean push(T t);
+
+  String[] getCommands();
+
+  boolean hasCommand(String command);
 }
