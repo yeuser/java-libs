@@ -48,7 +48,7 @@ class RequestFetcherNode extends Living {
   @Override
   protected void runtimeBehavior() throws Throwable {
     // Get a client from the queue
-    DataStream dataStream = inQueue.pop();
+    DataStream dataStream = inQueue.syncPop();
     if (dataStream == null) {
       // Waiting System in Queue couldn't handle something, we handle it here.
       // Possibility of this kind of error is one in million...

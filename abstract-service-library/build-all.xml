@@ -1,5 +1,5 @@
 <project name="Abstract-Service-Library" default="dist" basedir=".">
-	<property name="version" value="2.3.2-rc2" />
+	<property name="version" value="2.3.3-rc1" />
 	<property name="abstract-service-library" value="abstract-service-library-${version}" />
 	<property name="build" location="build" />
 	<property name="dist" location="dist/${abstract-service-library}" />

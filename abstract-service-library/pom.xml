@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.nise.ux</groupId>
 	<artifactId>abstract-service-library</artifactId>
-	<version>2.3.2-rc2-java6-2</version>
+	<version>2.3.3-rc1</version>
 	<packaging>jar</packaging>
 
 	<developers>
@@ -90,7 +90,7 @@
 				<version>3.0</version>
 				<configuration>
 					<source>1.7</source>
-					<target>1.6</target>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
 		</plugins>
