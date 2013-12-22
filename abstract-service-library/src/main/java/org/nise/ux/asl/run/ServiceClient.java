@@ -112,12 +112,7 @@ public class ServiceClient implements Closeable {
     ServiceResponse response = __invokeServiceCommand(command, data);
     if (response.getThrowable() != null)
       throw new ServiceException(response.getThrowable());
-    try {
-      return response.getData(type4Return);
-    } catch (Throwable t) {
-      Logger.getLogger(getClass()).error("response.data=" + response.getDataAsJson() + " command=" + command + " data=" + new Gson().toJson(data), t);
-      throw t;
-    }
+    return response.getData(type4Return);
   }
 
   /**
@@ -139,12 +134,7 @@ public class ServiceClient implements Closeable {
     ServiceResponse response = __invokeServiceCommand(command, data);
     if (response.getThrowable() != null)
       throw new ServiceException(response.getThrowable());
-    try {
-      return response.getData(class4Return);
-    } catch (Throwable t) {
-      Logger.getLogger(getClass()).error("response.data=" + response.getDataAsJson() + " command=" + command + " data=" + new Gson().toJson(data), t);
-      throw t;
-    }
+    return response.getData(class4Return);
   }
 
   private int cnt = 0;
