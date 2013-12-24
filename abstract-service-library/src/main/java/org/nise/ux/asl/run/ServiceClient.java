@@ -165,6 +165,7 @@ public class ServiceClient implements Closeable {
     dataStream.sendCommand(index, command, data);
     wait_lock.release();
     ServiceResponse response = waitList.get(index);
+    inited = false;
     while (!inited) {
       try {
         waitList.releaseReserve(index);
