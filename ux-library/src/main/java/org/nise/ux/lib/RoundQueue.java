@@ -99,20 +99,6 @@ public class RoundQueue<V> {
     return false;
   }
 
-  public V syncPop2() {
-    V v = this.syncPop();
-    // if (v != null)
-    // Global.printState();
-    return v;
-  }
-
-  public boolean syncPush2(V data) {
-    boolean b = this.syncPush(data);
-    // if (!b)
-    // Global.printState();
-    return b;
-  }
-
   /**
    * برای واکشی داده از صف استفاده می‌شود‫.
    * 

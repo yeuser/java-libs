@@ -11,13 +11,12 @@ import org.nise.ux.asl.data.ServiceResponse;
 import org.nise.ux.asl.face.DataConnection;
 import org.nise.ux.asl.lib.DataStream;
 import org.nise.ux.lib.Living;
-import org.nise.ux.lib.RoundQueue;
 
 class RequestFetcherNode extends Living {
   private final List<QueueFace<DataConnection>> consumersQueue = new ArrayList<QueueFace<DataConnection>>();
-  private final RoundQueue<DataStream>          inQueue;
+  private final QueueFace<DataStream>          inQueue;
 
-  public RequestFetcherNode(int id, RoundQueue<DataStream> inQueue) {
+  public RequestFetcherNode(int id, QueueFace<DataStream> inQueue) {
     super(id);
     this.inQueue = inQueue;
     initialize();
@@ -48,7 +47,7 @@ class RequestFetcherNode extends Living {
   @Override
   protected void runtimeBehavior() throws Throwable {
     // Get a client from the queue
-    DataStream dataStream = inQueue.syncPop();
+    DataStream dataStream = inQueue.pop();
     if (dataStream == null) {
       // Waiting System in Queue couldn't handle something, we handle it here.
       // Possibility of this kind of error is one in million...

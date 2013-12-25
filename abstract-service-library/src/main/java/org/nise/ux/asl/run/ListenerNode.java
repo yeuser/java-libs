@@ -7,17 +7,16 @@ import java.net.Socket;
 
 import org.nise.ux.asl.lib.DataStream;
 import org.nise.ux.lib.Living;
-import org.nise.ux.lib.RoundQueue;
 
 class ListenerNode extends Living {
-  private final RoundQueue<DataStream> outQueue;
-  private ServiceServerImpl            serviceServerImpl;
-  private int                          port;
-  private ServerSocket                 sock;
-  private boolean                      initialized = false;
-  private boolean                      not_ended   = true;
+  private final QueueFace<DataStream> outQueue;
+  private ServiceServerImpl           serviceServerImpl;
+  private int                         port;
+  private ServerSocket                sock;
+  private boolean                     initialized = false;
+  private boolean                     not_ended   = true;
 
-  public ListenerNode(int port, int id, ServiceServerImpl serviceServerImpl, RoundQueue<DataStream> outQueue) {
+  public ListenerNode(int port, int id, ServiceServerImpl serviceServerImpl, QueueFace<DataStream> outQueue) {
     super("ListenerNode #" + id);
     this.port = port;
     this.outQueue = outQueue;
@@ -48,7 +47,7 @@ class ListenerNode extends Living {
           // get next client here
           Socket socket = sock.accept();
           DataStream dataStream = new DataStream(socket);
-          while (!outQueue.syncPush(dataStream)) {
+          while (!outQueue.push(dataStream)) {
             // Waiting System in Queue couldn't handle something, we handle it here.
             // Possibility of this kind of error is one in million...
           }
