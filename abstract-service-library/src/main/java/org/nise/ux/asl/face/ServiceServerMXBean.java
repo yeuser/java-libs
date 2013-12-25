@@ -1,8 +1,9 @@
 package org.nise.ux.asl.face;
 
-import java.util.Map;
+import org.nise.ux.configuration.StatusInformer;
 
-public interface ServiceServerMXBean {
+
+public interface ServiceServerMXBean extends StatusInformer {
   /**
    * Set value of a configuration
    * 
@@ -103,18 +104,4 @@ public interface ServiceServerMXBean {
   public int getInSystem();
 
   public long getClients();
-
-  /**
-   * Gives all system status in a Map of "{Status name}" -> "{Status value}"
-   * 
-   * @return all system status
-   */
-  public Map<String, String> getAllStats();
-
-  /**
-   * Gives all system status in a Map of "{prefix}{Status name}" -> "{Status value}"
-   * 
-   * @return all system status
-   */
-  public Map<String, String> getAllStats(String prefix);
 }

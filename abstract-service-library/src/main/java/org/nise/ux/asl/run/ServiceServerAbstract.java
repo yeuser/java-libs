@@ -1,6 +1,5 @@
 package org.nise.ux.asl.run;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -10,9 +9,9 @@ import org.nise.ux.configuration.BasicConfigurations;
 import org.nise.ux.configuration.ConfigurationsHandler;
 
 abstract class ServiceServerAbstract implements ConfigurationsHandler, ServiceServer, ServiceServerMXBean {
-  private int              inSystem = 0;
-  private long             clients  = 0;
-  protected Configurations configurations;
+  private int            inSystem = 0;
+  private long           clients  = 0;
+  private Configurations configurations;
 
   public ServiceServerAbstract(Map<String, String> configurations) {
     String[][] configurationSet = Map2Array(configurations);
@@ -38,7 +37,7 @@ abstract class ServiceServerAbstract implements ConfigurationsHandler, ServiceSe
    */
   @Override
   public final void setConfiguration(String key, String value) {
-    this.configurations.setConfiguration(key, value);
+    this.configurations._setConfiguration(key, value);
   }
 
   /*
@@ -165,18 +164,18 @@ abstract class ServiceServerAbstract implements ConfigurationsHandler, ServiceSe
   protected abstract void start();
 
   class Configurations extends BasicConfigurations {
-    private static final String                    ASL_BUILD_ABSTRACT_SERVICE = "ASL_BUILD_ABSTRACT_SERVICE";
-    private HashMap<String, ConfigurationsHandler> configHandlersMap          = new HashMap<String, ConfigurationsHandler>();
+    private ConfigurationsHandler handler;
 
-    public Configurations(ConfigurationsHandler abstractService, String[][]... configurationSet) {
+    public Configurations(ConfigurationsHandler handler, String[][]... configurationSet) {
       super(configurationSet);
-      configHandlersMap.put(ASL_BUILD_ABSTRACT_SERVICE, abstractService);
+      this.handler = handler;
     }
 
-    protected void handleConfiuration(String key, String configuration, String handler) {
+    private void _setConfiguration(String key, String configuration) {
+      super.setConfiguration(key, configuration);
       try {
         Logger.getLogger(this.getClass()).info(key + ":" + configuration + ":" + handler);
-        ConfigurationsHandler configHandler = configHandlersMap.get(handler);
+        ConfigurationsHandler configHandler = handler;
         configHandler.refreshConfig(key, configuration);
       } catch (Exception e) {
         Logger.getLogger(this.getClass()).error("error!", e);

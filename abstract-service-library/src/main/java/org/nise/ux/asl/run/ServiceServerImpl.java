@@ -17,6 +17,7 @@ import org.nise.ux.asl.face.DataConnection;
 import org.nise.ux.asl.face.ServiceServerMXBean;
 import org.nise.ux.asl.face.WorkerFactory;
 import org.nise.ux.asl.lib.DataStream;
+import org.nise.ux.lib.Living;
 import org.nise.ux.lib.RoundQueue;
 
 public class ServiceServerImpl extends ServiceServerAbstract {
@@ -31,7 +32,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
   private final QueueFace<DataConnection>           rootWorkerQueue;
   private final String                              rootWorkerName;
   private RoundQueue<DataStream>                    aslRequestFetcherQueue;
-  private int[]                                     fetcherNo                  = { 1, 1000 };
+  private int[]                                     fetcherNo                  = { 5, 1000 };
   private int                                       workerId                   = 1;
   private int                                       distributerId              = 1;
   private boolean                                   stopped                    = false;
@@ -56,10 +57,9 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       rootWorkerName = l1Nodes.get(0).getName();
     } else {
       String distrName = ASL_STRUCTURE_HUB + distributerId++;
-      RoundQueue<DataConnection> rootWorkerRoundQueue = createWorkerQueue(distrName);
       rootWorkerName = distrName;
-      ASLStructureHub listASLDistributer = new ASLStructureHub(null, distrName, new int[] { 1, 1000 }, rootWorkerRoundQueue);
-      rootWorkerQueue = new RoundQueue2QueueFace(listASLDistributer, rootWorkerRoundQueue);
+      ASLStructureHub listASLDistributer = new ASLStructureHub(null, distrName, new int[] { 5, 1000 });
+      rootWorkerQueue = listASLDistributer.getInQueue();
       addWorkerCompany(distrName, listASLDistributer);
       for (WorkersTreeDecriptor node : l1Nodes) {
         /* QueueFace<DataConnection> childWorkerQueue = */initWorkerList(listASLDistributer, node);
@@ -99,26 +99,17 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     String workerName = workersTreeDecriptor.getName();
     WorkerFactory workerFactory = workersTreeDecriptor.getWorkerFactory();
     List<WorkersTreeDecriptor> workerList = workersTreeDecriptor.getNextSet();
-    RoundQueue<DataConnection> workerQueue = createWorkerQueue(workerName);
-    if (parent != null) {
-      parent.addNextNodeHub(workerQueue);
-      System.out.println(parent.name + " > " + workersTreeDecriptor.getName());
-    }
     int[] range = workersTreeDecriptor.getRange();
     ASLStructureHub aslNode;
     if (workerFactory == null) {
-      aslNode = new ASLStructureHub(parent, workerName, range, workerQueue);
+      aslNode = new ASLStructureHub(parent, workerName, range);
     } else {
-      aslNode = new ASLStructureHub(parent, workerName, range, workerFactory, workerQueue);
+      aslNode = new ASLStructureHub(parent, workerName, range, workerFactory);
     }
-    QueueFace<DataConnection> workerQueueFace = new RoundQueue2QueueFace(aslNode, workerQueue);
     addWorkerCompany(workerName, aslNode);
     if (workerList.size() > 1) {
       String distrName = ASL_STRUCTURE_HUB + distributerId++;
-      RoundQueue<DataConnection> aslMiddleNodeQueue = createWorkerQueue(distrName);
-      aslNode.addNextNodeHub(aslMiddleNodeQueue);
-      ASLStructureHub aslMiddleNode = new ASLStructureHub(aslNode, distrName, range, aslMiddleNodeQueue);
-      System.out.println(workerName + " > " + distrName);
+      ASLStructureHub aslMiddleNode = new ASLStructureHub(aslNode, distrName, range);
       addWorkerCompany(distrName, aslMiddleNode);
       for (WorkersTreeDecriptor node : workerList) {
         /* QueueFace<DataConnection> childWorkerQueue = */initWorkerList(aslMiddleNode, node);
@@ -128,20 +119,12 @@ public class ServiceServerImpl extends ServiceServerAbstract {
         /* QueueFace<DataConnection> childWorkerQueue = */initWorkerList(aslNode, workerList.get(0));
       }
     }
-    return workerQueueFace;
+    return aslNode.getInQueue();
   }
 
   private void addWorkerCompany(String workerName, ASLStructureHub aslNode) {
     workersNameList.add(workerName);
     workersListMap.put(workerName, aslNode);
-  }
-
-  private RoundQueue<DataConnection> createWorkerQueue(String workerName) {
-    String CONST_I_WORKER_QUEUE_LENGTH = "CONST_I_" + workerName + "_QUEUE_LENGTH";
-    int i_worker_queue_length = Integer.parseInt(validateConfiguration(CONST_I_WORKER_QUEUE_LENGTH, "100"));
-    RoundQueue<DataConnection> queue = new RoundQueue<DataConnection>(i_worker_queue_length);
-    Worker_iQueues.put(workerName, queue);
-    return queue;
   }
 
   @Override
@@ -161,7 +144,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     Logger.getLogger(ServiceServerImpl.class).trace("Created a ListenerNode");
     String workerName = "ASL_REQUEST_FETCHER";
     String CONST_I_WORKER_QUEUE_LENGTH = "CONST_I_" + workerName + "_QUEUE_LENGTH";
-    int i_worker_queue_length = Integer.parseInt(validateConfiguration(CONST_I_WORKER_QUEUE_LENGTH, "100"));
+    int i_worker_queue_length = Integer.parseInt(validateConfiguration(CONST_I_WORKER_QUEUE_LENGTH, "10"));
     aslRequestFetcherQueue = new RoundQueue<DataStream>(i_worker_queue_length);
     for (int i = 1; i <= fetcherNo[0]; i++) {
       RequestFetcherNode aslRequestFetcher = new RequestFetcherNode(i, aslRequestFetcherQueue);
@@ -184,8 +167,11 @@ public class ServiceServerImpl extends ServiceServerAbstract {
    */
   @Override
   public void refreshAll() {
-    for (String workersName : workersNameList) {
-      workersListMap.get(workersName).refreshWorkers();
+    for (String workerName : workersNameList) {
+      ASLStructureHub worker = workersListMap.get(workerName);
+      if (worker != null) {
+        worker.refreshWorkers();
+      }
     }
   }
 
@@ -201,7 +187,10 @@ public class ServiceServerImpl extends ServiceServerAbstract {
   public void refreshConfig(String key, String config) {
     if (key.startsWith(ASL_STRUCTURE_HUB_CONSUMER) && key.endsWith(_NO)) {
       String workerName = key.substring(ASL_STRUCTURE_HUB_CONSUMER.length(), key.length() - _NO.length());
-      workersListMap.get(workerName).refreshWorkers();
+      ASLStructureHub worker = workersListMap.get(workerName);
+      if (worker != null) {
+        worker.refreshWorkers();
+      }
     }
   }
 
@@ -256,43 +245,50 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     private final List<String>                    possibleCommands    = new ArrayList<String>();
     private final WorkerFactory                   workerFactory;
     private final String                          configurationName;
-    private int                                   consumerNo;
-    private final QueueFace<DataConnection>       aslQueue;
+    private final QueueFace<DataConnection>       inQueue;
     private final ASLStructureHub                 parent;
     private final String                          name;
 
-    public ASLStructureHub(ASLStructureHub parent, String name, int[] range, RoundQueue<DataConnection> inQueue) {
-      this(parent, name, range, null, inQueue);
+    public ASLStructureHub(ASLStructureHub parent, String name, int[] range) {
+      this(parent, name, range, null);
     }
 
-    public ASLStructureHub(ASLStructureHub parent, String name, int[] range, WorkerFactory workerFactory, RoundQueue<DataConnection> inQueue) {
+    public ASLStructureHub(ASLStructureHub parent, String name, int[] range, WorkerFactory workerFactory) {
       this.parent = parent;
       this.name = name;
       this.workerFactory = workerFactory;
       this.configurationName = ASL_STRUCTURE_HUB_CONSUMER + name + _NO;
-      this.consumerNo = Integer.parseInt(validateConfiguration(configurationName, String.valueOf(range[0])));
+      validateConfiguration(configurationName, String.valueOf(range[0]));
       if (range == null || range.length == 0) {
-        range = new int[] { 1, 1000 };
+        range = new int[] { 5, 1000 };
       }
+      String CONST_I_WORKER_QUEUE_LENGTH = "CONST_I_" + name + "_QUEUE_LENGTH";
+      int i_worker_queue_length = Integer.parseInt(validateConfiguration(CONST_I_WORKER_QUEUE_LENGTH, "10"));
+      RoundQueue<DataConnection> queue = new RoundQueue<DataConnection>(i_worker_queue_length);
+      Worker_iQueues.put(name, queue);
       if (range.length > 1) {
         int minimum_number_of_workers = range[0];
         int maximum_number_of_workers = range[1];
-        this.aslQueue = new QueueController(this, inQueue, configurationName, maximum_number_of_workers, minimum_number_of_workers);
+        this.inQueue = new QueueController(this, queue, configurationName, maximum_number_of_workers, minimum_number_of_workers);
       } else {
-        this.aslQueue = new RoundQueue2QueueFace(this, inQueue);
+        this.inQueue = new RoundQueue2QueueFace(this, queue);
+      }
+      if (parent != null) {
+        parent.addNextNodeHub(this.inQueue);
+        System.out.println(parent.name + " > " + this.name);
       }
     }
 
-    public void addNextNodeHub(RoundQueue<DataConnection> consumerQueue) {
-      nextNodeWorkerQueue.add(new RoundQueue2QueueFace(this, consumerQueue));
+    public void addNextNodeHub(QueueFace<DataConnection> consumerQueue) {
+      nextNodeWorkerQueue.add(consumerQueue);
     }
 
     public void addHubWorker() {
       DistributerNode aslDistributer;
       if (workerFactory == null) {
-        aslDistributer = new DistributerNode(distributerId++, aslQueue, name);
+        aslDistributer = new DistributerNode(distributerId++, inQueue, name);
       } else {
-        WorkerNode aslWorkerNode = new WorkerNode(workerId++, aslQueue, workerFactory.getWorker(), name);
+        WorkerNode aslWorkerNode = new WorkerNode(workerId++, inQueue, workerFactory.getWorker(), name);
         for (String command : aslWorkerNode.getCommandSet()) {
           addCommand(command);
         }
@@ -300,6 +296,10 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       }
       aslDistributer.addConsumers(nextNodeWorkerQueue);
       aSLHubWorkers.add(aslDistributer);
+    }
+
+    public QueueFace<DataConnection> getInQueue() {
+      return inQueue;
     }
 
     private void addCommand(String command) {
@@ -345,11 +345,11 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     }
 
     private int getWorkerNo() {
-      return stopped ? 0 : consumerNo;
+      return stopped ? 0 : getIntegerConfiguration(configurationName);
     }
   }
 
-  class QueueController implements Runnable, QueueFace<DataConnection> {
+  class QueueController extends Living implements QueueFace<DataConnection> {
     private final RoundQueue<DataConnection> queue;
     private final String                     config_name;
     private long                             lastPushPop;
@@ -367,6 +367,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     private final ASLStructureHub            aslStructureHub;
 
     public QueueController(ASLStructureHub aslStructureHub, RoundQueue<DataConnection> queue, String config_name, int maximum_number_of_workers, int minimum_number_of_workers) {
+      super("QueueController#" + config_name);
       this.aslStructureHub = aslStructureHub;
       this.queue = queue;
       this.config_name = config_name;
@@ -374,11 +375,10 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       queueMean = queue.getLimit() * rate;
       this.maximum_number_of_workers = maximum_number_of_workers;
       this.minimum_number_of_workers = minimum_number_of_workers;
-      new Thread(this).start();
     }
 
     @Override
-    public void run() {
+    protected void init() {
       system_start_time = System.currentTimeMillis();
       try {
         Thread.sleep(WARM_UP_PERIOD);
@@ -394,16 +394,18 @@ public class ServiceServerImpl extends ServiceServerAbstract {
                 + " and lastPushPop=" + lastPushPop//
                 + " and system_start_time=" + system_start_time);
       }
-      while (true) {
-        try {
-          Thread.sleep(Math.max(QUEUE_CHECK_DELAY, lastPushPop - System.currentTimeMillis()) + QUEUE_CHECK_DELAY);
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        if (lastPushPop + QUEUE_CHECK_DELAY <= System.currentTimeMillis() + 5) { // use 5ms as margin of java sleep error
-          if (queueMean < dec_margin * queue.getLimit()) {
-            changeConfigurationValue(dec_rate);
-          }
+    }
+
+    @Override
+    protected void runtimeBehavior() throws Throwable {
+      try {
+        Thread.sleep(Math.max(QUEUE_CHECK_DELAY, lastPushPop - System.currentTimeMillis()) + QUEUE_CHECK_DELAY);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      if (lastPushPop + QUEUE_CHECK_DELAY <= System.currentTimeMillis() + 5) { // use 5ms as margin of java sleep error
+        if (queueMean < dec_margin * queue.getLimit()) {
+          changeConfigurationValue(dec_rate);
         }
       }
     }

@@ -2,14 +2,15 @@ package org.nise.ux.asl.face;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Map;
+
+import org.nise.ux.configuration.StatusInformer;
 
 /**
  * Interface of a Server side Service object.
  * 
  * @author Yaser Eftekhari ( ^ - ^ )
  */
-public interface ServiceServer extends Closeable {
+public interface ServiceServer extends Closeable, StatusInformer {
   /**
    * constant value equal to {@value #LISTENING_PORT}
    */
@@ -131,20 +132,6 @@ public interface ServiceServer extends Closeable {
   public int getInSystem();
 
   public long getClients();
-
-  /**
-   * Gives all system status in a Map of "{Status name}" -> "{Status value}"
-   * 
-   * @return all system status
-   */
-  public Map<String, String> getAllStats();
-
-  /**
-   * Gives all system status in a Map of "{prefix}{Status name}" -> "{Status value}"
-   * 
-   * @return all system status
-   */
-  public Map<String, String> getAllStats(String prefix);
 
   /**
    * Closes service-server by ending all client requests if 'exit process' is not forced.
