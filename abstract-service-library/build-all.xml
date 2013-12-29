@@ -1,5 +1,5 @@
 <project name="Abstract-Service-Library" default="dist" basedir=".">
-	<property name="version" value="2.4.0-rc1" />
+	<property name="version" value="2.4.0-rc1-java6" />
 	<property name="abstract-service-library" value="abstract-service-library-${version}" />
 	<property name="build" location="build" />
 	<property name="dist" location="dist/${abstract-service-library}" />
@@ -25,7 +25,7 @@
 
 	<target name="build" depends="init">
 		<mkdir dir="${build.classes}" />
-		<javac srcdir="${src}" destdir="${build.classes}" source="1.7" target="1.7" classpathref="AbstractServiceLibrary.classpath" />
+		<javac srcdir="${src}" destdir="${build.classes}" source="1.6" target="1.6" classpathref="AbstractServiceLibrary.classpath" />
 	</target>
 
 	<target name="jar" depends="clean, build">
