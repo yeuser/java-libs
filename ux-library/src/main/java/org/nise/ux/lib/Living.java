@@ -15,6 +15,12 @@ public abstract class Living implements Runnable {
     th.start();
   }
 
+  public Living(int id, String sub_name) {
+    th.setName(this.getClass().getName() + "_" + sub_name + "#" + id);
+    th.setDaemon(false);
+    th.start();
+  }
+
   public Living(String name) {
     th.setName(name);
     th.setDaemon(false);
