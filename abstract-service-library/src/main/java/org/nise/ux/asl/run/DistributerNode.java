@@ -13,7 +13,7 @@ class DistributerNode extends Living {
   private String                                name;
 
   public DistributerNode(int id, QueueFace<DataConnection> inQueue, String name) {
-    super(id);
+    super(id, name);
     this.name = name;
     this.inQueue = inQueue;
     initialize();

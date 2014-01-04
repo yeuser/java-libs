@@ -37,17 +37,26 @@ public class ServiceServerImpl extends ServiceServerAbstract {
   private final QueueFace<DataConnection> rootWorkerQueue;
   private final String                    rootWorkerName;
   private QueueFace<DataStream>           aslRequestFetcherQueue;
-  private int[]                           fetcherNo                      = { 5, 1000 };
   private int                             workerId                       = 1;
   private int                             distributerId                  = 1;
   private boolean                         stopped                        = false;
+  private int[]                           fetcherNo;
 
   public ServiceServerImpl(List<WorkersTreeDecriptor> firstLayerNodes) throws ChainException {
     this(firstLayerNodes, new HashMap<String, String>());
   }
 
+  public ServiceServerImpl(List<WorkersTreeDecriptor> firstLayerNodes, int[] fetcherNo) throws ChainException {
+    this(firstLayerNodes, new HashMap<String, String>(), fetcherNo);
+  }
+
   public ServiceServerImpl(List<WorkersTreeDecriptor> firstLayerNodes, Map<String, String> configurationSet) throws ChainException {
+    this(firstLayerNodes, configurationSet, new int[] { 5, 1000 });
+  }
+
+  public ServiceServerImpl(List<WorkersTreeDecriptor> firstLayerNodes, Map<String, String> configurationSet, int[] fetcherNo) throws ChainException {
     super(configurationSet);
+    this.fetcherNo = fetcherNo;
     List<WorkersTreeDecriptor> l1Nodes = new ArrayList<WorkersTreeDecriptor>();
     for (WorkersTreeDecriptor workersTreeDecriptor : firstLayerNodes) {
       WorkersTreeDecriptor node = checkWorkerFactoryNode(workersTreeDecriptor);

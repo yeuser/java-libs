@@ -43,6 +43,7 @@ public class ServiceServerBuilder {
   private int                               serverPort;
   private int                               max_clients             = 1000;
   private boolean                           test_mode               = false;
+  private int[]                             fetcherNo;
 
   /**
    * @param serverPort
@@ -112,6 +113,20 @@ public class ServiceServerBuilder {
   }
 
   /**
+   * Set value of configuration for request_fetcher_no with automatic management with lower/upper bands specified.
+   * 
+   * @param num
+   *          number of request-fetchers
+   * @return
+   */
+  public ServiceServerBuilder setAutoFetcherNo(int lower_bound, int upper_bound) {
+    int low = Math.max(1, lower_bound);
+    int high = Math.min(Math.max(low, upper_bound), 1000);
+    fetcherNo = new int[] { low, high };
+    return this;
+  }
+
+  /**
    * Creates a server listening on defined LISTENING_PORT
    * 
    * @return reference to main server object
@@ -140,7 +155,7 @@ public class ServiceServerBuilder {
     for (WorkersTreeDecriptor workersTreeDecriptor : firstLayerNodes) {
       workersTreeDecriptor.setParent(null);
     }
-    ServiceServerImpl server = new ServiceServerImpl(firstLayerNodes);
+    ServiceServerImpl server = new ServiceServerImpl(firstLayerNodes, fetcherNo);
     server.setListeningPort(serverPort);
     server.setMax_clients(max_clients);
     server.setTest_mode(test_mode);

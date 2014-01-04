@@ -8,8 +8,9 @@
 /home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/run/ServiceServerAbstract.java
 /home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/data/CommandChain.java
 /home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/lib/IndexedData.java
-/home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/face/ServiceServer.java
+/home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/face/ServiceBaseInterface.java
 /home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/run/WorkerNode.java
+/home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/face/ServiceServer.java
 /home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/run/ListenerNode.java
 /home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/run/RequestFetcherNode.java
 /home/ye/workspace/java-libs/abstract-service-library/src/main/java/org/nise/ux/asl/run/ServiceServerImpl.java

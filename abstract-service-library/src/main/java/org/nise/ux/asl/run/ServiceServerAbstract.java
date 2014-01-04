@@ -106,9 +106,9 @@ abstract class ServiceServerAbstract implements ConfigurationsHandler, ServiceSe
     setConfiguration(LISTENING_PORT, String.valueOf(port));
   }
 
-  public final void setFetcherNo(int count) {
-    setConfiguration(FETCHER_NO, String.valueOf(count));
-  }
+//  public final void setFetcherNo(int count) {
+//    setConfiguration(FETCHER_NO, String.valueOf(count));
+//  }
 
   /*
    * (non-Javadoc)
