@@ -33,15 +33,7 @@ public class ServiceResponse {
     } catch (IOException e) {
       Logger.getLogger(ServiceResponse.class).error("", e);
     }
-    try {
-      this.data = mapper.writeValueAsString(data);
-    } catch (JsonGenerationException e) {
-      Logger.getLogger(ServiceResponse.class).error("", e);
-    } catch (JsonMappingException e) {
-      Logger.getLogger(ServiceResponse.class).error("", e);
-    } catch (IOException e) {
-      Logger.getLogger(ServiceResponse.class).error("", e);
-    }
+    this.data = new Gson().toJson(data);
   }
 
   public Throwable getThrowable() {
