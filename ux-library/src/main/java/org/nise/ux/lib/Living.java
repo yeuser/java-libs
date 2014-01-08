@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
  * اين کلاس برای مديريت‫ threadها استفاده می‌شود.
  */
 public abstract class Living implements Runnable {
+  private boolean ripped  = false;
   private boolean running = true;
   private Thread  th      = new Thread(this);
 
@@ -38,6 +39,7 @@ public abstract class Living implements Runnable {
       }
     }
     Logger.getLogger(this.getClass()).trace(th.getName() + " died.");
+    ripped = true;
   }
 
   protected void init() {
@@ -48,5 +50,17 @@ public abstract class Living implements Runnable {
 
   public void die() {
     running = false;
+  }
+
+  public boolean isRunning() {
+    return running;
+  }
+
+  public boolean isDead() {
+    return !running;
+  }
+
+  public boolean isRipped() {
+    return ripped;
   }
 }

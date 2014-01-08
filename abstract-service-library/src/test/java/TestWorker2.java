@@ -39,6 +39,6 @@ public class TestWorker2 implements Worker {
 
   @CommandChain(after = "salam6", name = "dummy")
   public void test(Map<String, List<String>> ret, Throwable t) {
-    Logger.getLogger(TestWorker2.class).info("test @CommandChain: return=" + ret + ", t=" + t);
+//    Logger.getLogger(TestWorker2.class).info("test @CommandChain: return=" + ret + ", t=" + t);
   }
 }

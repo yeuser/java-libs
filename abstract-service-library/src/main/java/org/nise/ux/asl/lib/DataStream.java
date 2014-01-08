@@ -68,11 +68,11 @@ public class DataStream implements Closeable {
   }
 
   public void sendReturn(int index, Object returnData) throws IOException {
-    send(new ServiceResponse(returnData), index);
+    send(ServiceResponse.getDataResponse(returnData), index);
   }
 
   public void sendReturn(int index, Throwable throwable) throws IOException {
-    send(new ServiceResponse(throwable), index);
+    send(ServiceResponse.getThrowableResponse(throwable), index);
   }
 
   public IndexedData<ServiceResponse> recieveReturn() throws IOException {

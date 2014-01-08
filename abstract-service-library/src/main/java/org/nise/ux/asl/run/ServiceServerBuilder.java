@@ -41,9 +41,9 @@ public class ServiceServerBuilder {
   private Map<String, WorkersTreeDecriptor> WorkerFactoriesNamedMap = new HashMap<String, WorkersTreeDecriptor>();
   private Map<String, int[]>                ranges                  = new HashMap<String, int[]>();
   private int                               serverPort;
-  private int                               max_clients             = 1000;
+  private int                               max_clients             = 50;
   private boolean                           test_mode               = false;
-  private int[]                             fetcherNo;
+  private int[]                             fetcherNo               = { 2, 50 };
 
   /**
    * @param serverPort
@@ -107,7 +107,7 @@ public class ServiceServerBuilder {
    */
   public ServiceServerBuilder setAutoWorkerNo(String worker, int lower_bound, int upper_bound) {
     int low = Math.max(1, lower_bound);
-    int high = Math.min(Math.max(low, upper_bound), 1000);
+    int high = Math.min(Math.max(low, upper_bound), 50);
     setRanges(worker, new int[] { low, high });
     return this;
   }
@@ -121,7 +121,7 @@ public class ServiceServerBuilder {
    */
   public ServiceServerBuilder setAutoFetcherNo(int lower_bound, int upper_bound) {
     int low = Math.max(1, lower_bound);
-    int high = Math.min(Math.max(low, upper_bound), 1000);
+    int high = Math.min(Math.max(low, upper_bound), 50);
     fetcherNo = new int[] { low, high };
     return this;
   }
@@ -139,7 +139,7 @@ public class ServiceServerBuilder {
       WorkersTreeDecriptor workerFactoryNamed = WorkerFactoriesNamedMap.get(key);
       int[] workerRange = ranges.get(workerFactoryNamed.getName());
       if (workerRange == null) {
-        workerRange = new int[] { 1, 1000 };
+        workerRange = new int[] { 1, 50 };
       }
       workerFactoryNamed.setRange(workerRange);
       String parentName = workerFactoryNamed.getParentName();

@@ -21,6 +21,7 @@ import org.nise.ux.lib.Living;
 import org.nise.ux.lib.RoundQueue;
 
 public class ServiceServerImpl extends ServiceServerAbstract {
+  private static final Logger             LOGGER                         = Logger.getLogger(ServiceServerImpl.class);
   private static final String             DISTRIBUTER_NODE_NAME          = "DISTRIBUTER_NODE_";
   private static final String             NODE_NAME_PRIFIX               = "NODE_";
   private static final String             _NO                            = "_NO";
@@ -143,31 +144,31 @@ public class ServiceServerImpl extends ServiceServerAbstract {
 
   @Override
   protected void start() {
-    Logger.getLogger(ServiceServerImpl.class).info("RequestFetcherNode > " + rootWorkerName);
-    Logger.getLogger(ServiceServerImpl.class).info("ListenerNode > RequestFetcherNode");
+    LOGGER.info("RequestFetcherNode > " + rootWorkerName);
+    LOGGER.info("ListenerNode > RequestFetcherNode");
     try {
       MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
       ObjectName name = new ObjectName(ServiceServerImpl.class.getPackage().getName() + ":type=" + ServiceServerImpl.class.getSimpleName());
       ServiceServerMXBean mbean = this;
       mbs.registerMBean(mbean, name);
-      Logger.getLogger(ServiceServerImpl.class).info("ServiceServerMXBean successfully registered.");
+      LOGGER.info("ServiceServerMXBean successfully registered.");
     } catch (Throwable t) {
-      Logger.getLogger(ServiceServerImpl.class).error("Problem: registering ServiceServerMXBean successfully.", t);
+      LOGGER.error("Problem: registering ServiceServerMXBean successfully.", t);
     }
     aslRequestFetcherQueue = new FetcherQueueController();
     refreshAll();
     aslListeners.add(new ListenerNode(getListeningPort(), 1, this, aslRequestFetcherQueue));
-    Logger.getLogger(ServiceServerImpl.class).trace("Created a ListenerNode");
+    LOGGER.trace("Created a ListenerNode");
   }
 
   private void refreshFetchers() {
     int fetcher_no = Configurations.getConfigurationAsInteger(validateConfiguration(fetcherWorkerConfigurationName, String.valueOf(fetcherNo[0])));
     while (aslRequestFetchers.size() > fetcher_no) {
-      Logger.getLogger(ServiceServerImpl.class).trace("Removed a RequestFetcher");
+      LOGGER.trace("Removed a RequestFetcher");
       aslRequestFetchers.remove(aslRequestFetchers.size() - 1).die();
     }
     while (aslRequestFetchers.size() < fetcher_no) {
-      Logger.getLogger(ServiceServerImpl.class).trace("Created a RequestFetcher");
+      LOGGER.trace("Created a RequestFetcher");
       RequestFetcherNode aslRequestFetcher = new RequestFetcherNode(aslRequestFetchers.size(), aslRequestFetcherQueue);
       aslRequestFetcher.addConsumer(rootWorkerQueue);
       aslRequestFetchers.add(aslRequestFetcher);
@@ -264,7 +265,30 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     return workersNameList.toArray(new String[] {});
   }
 
+  @Override
+  public void close() throws IOException {
+    this.exit(false);
+  }
+
+  @Override
+  public void exit(boolean force) {
+    stopped = true;
+    for (ListenerNode aslListener : aslListeners) {
+      aslListener.die();
+      try {
+        aslListener.exit();
+      } catch (IOException e) {
+        LOGGER.error("Error exiting listener.", e);
+      }
+    }
+    for (RequestFetcherNode aslRequestFetcher : aslRequestFetchers) {
+      aslRequestFetcher.die();
+    }
+    refreshAll();
+  }
+
   public class FetcherQueueController extends Living implements QueueFace<DataStream> {
+    private final Logger                 LOGGER                    = Logger.getLogger(FetcherQueueController.class);
     private final RoundQueue<DataStream> queue                     = new RoundQueue<DataStream>(i_fetcher_worker_queue_length);
     private final int                    minimum_number_of_workers = fetcherNo[0];
     private final int                    maximum_number_of_workers = fetcherNo[1];
@@ -308,12 +332,12 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       configurationToValue = Math.max(configurationToValue, minimum_number_of_workers);
       if (configurationFromValue == configurationToValue)
         return;
-      if (Logger.getLogger(QueueController.class).isDebugEnabled()) {
-        Logger.getLogger(QueueController.class).debug(//
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(//
             "Changing ConfigurationValue for config: " + fetcherWorkerConfigurationName//
                 + " from configurationValue=" + configurationFromValue//
                 + " to configurationValue=" + configurationToValue//
-        );
+            );
       }
       setConfiguration(fetcherWorkerConfigurationName, String.valueOf(configurationToValue));
     }
@@ -342,7 +366,9 @@ public class ServiceServerImpl extends ServiceServerAbstract {
   }
 
   class ASLStructureHub {
+    private final Logger                          LOGGER              = Logger.getLogger(ASLStructureHub.class);
     private final List<DistributerNode>           hubWorkers          = new ArrayList<DistributerNode>();
+    private final List<DistributerNode>           deadHubWorkers      = new ArrayList<DistributerNode>();
     private final List<QueueFace<DataConnection>> nextNodeWorkerQueue = new ArrayList<QueueFace<DataConnection>>();
     private final List<String>                    possibleCommands    = new ArrayList<String>();
     private final WorkerFactory                   workerFactory;
@@ -404,13 +430,51 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       hubWorkers.add(aslDistributer);
     }
 
+    public void removeHubWorker() {
+      DistributerNode node = hubWorkers.remove(hubWorkers.size() - 1);
+      node.die();
+      deadHubWorkers.add(node);
+    }
+
+    public void refreshWorkers() {
+      if (hubWorkers.size() > getWorkerNo()) {
+        int cnt_ = hubWorkers.size();
+        while (hubWorkers.size() > getWorkerNo()) {
+          removeHubWorker();
+        }
+        LOGGER.trace("Updated Count [" + cnt_ + "->" + getWorkerNo() + "] Removed " + (cnt_ - getWorkerNo()) + " nodes type: HubWorker#" + name);
+        while (deadHubWorkers.size() > 0) {
+          synchronized (this) {
+            for (int i = 0; i < deadHubWorkers.size(); i++) {
+              inQueue.push(null);
+            }
+          }
+          int i = 0;
+          while (i < deadHubWorkers.size()) {
+            if (deadHubWorkers.get(i).isRipped()) {
+              deadHubWorkers.remove(i);
+            } else {
+              i++;
+            }
+          }
+        }
+      }
+      if (hubWorkers.size() < getWorkerNo()) {
+        int cnt_ = hubWorkers.size();
+        while (hubWorkers.size() < getWorkerNo()) {
+          addHubWorker();
+        }
+        LOGGER.trace("Updated Count [" + cnt_ + "->" + getWorkerNo() + "]Created " + (getWorkerNo() - cnt_) + " nodes type: HubWorker#" + name);
+      }
+    }
+
     public QueueFace<DataConnection> getInQueue() {
       return inQueue;
     }
 
     private void addCommand(String command) {
-      if (Logger.getLogger(ServiceServerImpl.class).isTraceEnabled()) {
-        Logger.getLogger(ServiceServerImpl.class).trace("Worker: " + name + " addCommand on: " + command + "@" + possibleCommands);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Worker: " + name + " addCommand on: " + command + "@" + possibleCommands);
       }
       if (!possibleCommands.contains(command)) {
         possibleCommands.add(command);
@@ -420,9 +484,15 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       }
     }
 
+    private boolean hasCommand(DataConnection dataConnection) {
+      if (dataConnection == null)
+        return true;
+      return hasCommand(dataConnection.getCommand());
+    }
+
     private boolean hasCommand(String command) {
-      if (Logger.getLogger(ServiceServerImpl.class).isTraceEnabled()) {
-        Logger.getLogger(ServiceServerImpl.class).trace("Worker: " + name + " hasCommand on: " + command + "@" + possibleCommands);
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace("Worker: " + name + " hasCommand on: " + command + "@" + possibleCommands);
       }
       if (possibleCommands.contains(command)) {
         return true;
@@ -433,27 +503,13 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       return false;
     }
 
-    public void removeHubWorker() {
-      hubWorkers.remove(hubWorkers.size() - 1).die();
-    }
-
-    public void refreshWorkers() {
-      while (hubWorkers.size() > getWorkerNo()) {
-        Logger.getLogger(ASLStructureHub.class).trace("Removed a HubWorker#" + name);
-        removeHubWorker();
-      }
-      while (hubWorkers.size() < getWorkerNo()) {
-        Logger.getLogger(ASLStructureHub.class).trace("Created a HubWorker#" + name);
-        addHubWorker();
-      }
-    }
-
     private int getWorkerNo() {
       return stopped ? 0 : getIntegerConfiguration(configurationName);
     }
   }
 
   class QueueController extends Living implements QueueFace<DataConnection> {
+    private final Logger                     LOGGER            = Logger.getLogger(QueueController.class);
     private final RoundQueue<DataConnection> queue;
     private final String                     config_name;
     private long                             lastPushPop;
@@ -491,8 +547,8 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       }
       lastPushPop = System.currentTimeMillis();
       //system_start_time = lastPushPop - WARM_UP_PERIOD;
-      if (Logger.getLogger(QueueController.class).isTraceEnabled()) {
-        Logger.getLogger(QueueController.class).trace( //
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace( //
             "Started ASL QueueControler for config: " + config_name//
                 + " with queueMean=" + queueMean//
                 + " and lastPushPop=" + lastPushPop//
@@ -543,23 +599,23 @@ public class ServiceServerImpl extends ServiceServerAbstract {
       configurationToValue = Math.max(configurationToValue, minimum_number_of_workers);
       if (configurationFromValue == configurationToValue)
         return;
-      if (Logger.getLogger(QueueController.class).isDebugEnabled()) {
-        Logger.getLogger(QueueController.class).debug(//
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(//
             "Changing ConfigurationValue for config: " + config_name//
                 + " from configurationValue=" + configurationFromValue//
                 + " to configurationValue=" + configurationToValue//
                 + " and queueMean=" + queueMean//
-        );
+            );
       }
-      setConfiguration(config_name, String.valueOf(configurationToValue));
+//      setConfiguration(config_name, String.valueOf(configurationToValue));
     }
 
     private void changeQueueMean() {
       int count = queue.getCount();
       long time = System.currentTimeMillis();
       double beta = (1 - alpha) * (time - lastPushPop) / (time - system_start_time);
-      if (Logger.getLogger(QueueController.class).isTraceEnabled()) {
-        Logger.getLogger(QueueController.class).trace(//
+      if (LOGGER.isTraceEnabled()) {
+        LOGGER.trace(//
             "Changing queueMean for config: " + config_name//
                 + " from queueMean=" + queueMean//
                 + " to queueMean=" + (queueMean * (1 - beta) + count * beta)//
@@ -567,7 +623,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
                 + " and (time - system_start_time)=" + (time - system_start_time)//
                 + " and alpha_time=" + beta//
                 + " and count=" + count//
-        );
+            );
       }
       queueMean = queueMean * alpha * beta + count * (1 - alpha * beta);
       lastPushPop = time;
@@ -580,7 +636,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
 
     @Override
     public boolean push(DataConnection dataConnection) {
-      if (aslStructureHub.hasCommand(dataConnection.getCommand())) {
+      if (aslStructureHub.hasCommand(dataConnection)) {
         return pushIntoQueue(dataConnection);
       }
       return true;
@@ -613,7 +669,7 @@ public class ServiceServerImpl extends ServiceServerAbstract {
 
     @Override
     public boolean push(DataConnection dataConnection) {
-      if (aslStructureHub.hasCommand(dataConnection.getCommand())) {
+      if (aslStructureHub.hasCommand(dataConnection)) {
         return queue.syncPush(dataConnection);
       }
       return true;
@@ -628,27 +684,5 @@ public class ServiceServerImpl extends ServiceServerAbstract {
     public boolean hasCommand(String command) {
       return aslStructureHub.hasCommand(command);
     }
-  }
-
-  @Override
-  public void close() throws IOException {
-    this.exit(false);
-  }
-
-  @Override
-  public void exit(boolean force) {
-    stopped = true;
-    for (ListenerNode aslListener : aslListeners) {
-      aslListener.die();
-      try {
-        aslListener.exit();
-      } catch (IOException e) {
-        Logger.getLogger(getClass()).error("Error exiting listener.", e);
-      }
-    }
-    for (RequestFetcherNode aslRequestFetcher : aslRequestFetchers) {
-      aslRequestFetcher.die();
-    }
-    refreshAll();
   }
 }

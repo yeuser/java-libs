@@ -14,15 +14,14 @@ public class ServiceResponse {
   public String data;
   public String throwable;
 
-  public ServiceResponse(Object data) {
-    this(data, null);
-  }
-
-  public ServiceResponse(Throwable throwable) {
-    this(null, throwable);
-  }
-
-  public ServiceResponse(Object data, Throwable throwable) {
+  //  private ServiceResponse(Object data) {
+  //    this(data, null);
+  //  }
+  //
+  //  private ServiceResponse(Throwable throwable) {
+  //    this(null, throwable);
+  //  }
+  private ServiceResponse(Object data, Throwable throwable) {
     ObjectMapper mapper = new ObjectMapper();
     try {
       this.throwable = mapper.writeValueAsString(throwable);
@@ -63,5 +62,18 @@ public class ServiceResponse {
   @Override
   public String toString() {
     return "data=" + data + " throwable=" + throwable;
+  }
+
+  public static ServiceResponse getDataResponse(Object data) {
+    return new ServiceResponse(data, null);
+  }
+
+  public static ServiceResponse getThrowableResponse(Throwable throwable) {
+    Logger.getLogger(ServiceResponse.class).trace("", throwable);
+    return new ServiceResponse(null, throwable);
+  }
+
+  public static ServiceResponse getFullResponse(Object data, Throwable throwable) {
+    return new ServiceResponse(data, throwable);
   }
 }

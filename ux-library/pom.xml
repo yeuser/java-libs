@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.nise.ux.lib</groupId>
 	<artifactId>ux-library</artifactId>
-	<version>0.2.3</version>
+	<version>0.2.4</version>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -68,7 +68,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.0</version>
 				<configuration>
-					<source>1.7</source>
+					<source>1.6</source>
 					<target>1.6</target>
 				</configuration>
 			</plugin>

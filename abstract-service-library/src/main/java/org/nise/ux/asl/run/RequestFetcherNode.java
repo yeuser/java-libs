@@ -14,7 +14,7 @@ import org.nise.ux.lib.Living;
 
 class RequestFetcherNode extends Living {
   private final List<QueueFace<DataConnection>> consumersQueue = new ArrayList<QueueFace<DataConnection>>();
-  private final QueueFace<DataStream>          inQueue;
+  private final QueueFace<DataStream>           inQueue;
 
   public RequestFetcherNode(int id, QueueFace<DataStream> inQueue) {
     super(id);
@@ -68,7 +68,7 @@ class RequestFetcherNode extends Living {
             }
           }
           if (!has_handler) {
-            dataConnection.send(new ServiceResponse(new ServiceException("Server has no implementation for command `" + command + "`")));
+            dataConnection.send(ServiceResponse.getThrowableResponse(new ServiceException("Server has no implementation for command `" + command + "`")));
           }
           dataConnection = dataStream.extractCommand();
         }

@@ -2,6 +2,9 @@ package org.nise.ux.asl.run;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import org.apache.log4j.Logger;
@@ -69,6 +72,10 @@ public class ServiceClient implements Closeable {
                 waitList.put(response.data, response.index);
               } catch (IOException e) {
                 Logger.getLogger(ServiceClient.class).error("Error while recieving response.", e);
+                closed |= dataStream.isClosed();
+                if (closed) {
+                  endReservedIndexes();
+                }
               }
             }
           } catch (InterruptedException e) {
@@ -137,18 +144,31 @@ public class ServiceClient implements Closeable {
     return response.getData(class4Return);
   }
 
-  private int cnt = 0;
+  private List<Integer> reservedIndexes          = new ArrayList<Integer>();
+  private Semaphore     reservedIndexesSemaphore = new Semaphore(1);
+  private int           cnt                      = 0;
 
   private ServiceResponse __invokeServiceCommand(String command, Object... data) throws IOException {
     boolean inited = false;
     int index = -1;
     while (!inited) {
+      if (closed) {
+        throw new ClosedChannelException();
+      }
       try {
         index = waitList.reserveIndex();
+        if (!closed) {
+          reservedIndexesSemaphore.acquire();
+          reservedIndexes.add(index);
+          reservedIndexesSemaphore.release();
+        }
         inited = true;
       } catch (InterruptedException e) {
         Thread.yield();
       }
+    }
+    if (closed) {
+      throw new ClosedChannelException();
     }
     inited = false;
     while (!inited) {
@@ -198,10 +218,23 @@ public class ServiceClient implements Closeable {
   @Override
   public void close() throws IOException {
     closed = true;
+    endReservedIndexes();
     th.stop();
     dataStream.close();
     wait_lock.release();
     Thread.yield();
     wait_lock = new Semaphore(0);
+  }
+
+  private void endReservedIndexes() {
+    try {
+      reservedIndexesSemaphore.acquire();
+      for (Integer index : reservedIndexes) {
+        waitList.put(ServiceResponse.getDataResponse(null), index);
+      }
+      reservedIndexesSemaphore.release();
+    } catch (InterruptedException ie) {
+      Logger.getLogger(ServiceClient.class).error("Error while closing failed responses.", ie);
+    }
   }
 }
