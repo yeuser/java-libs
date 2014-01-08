@@ -1,5 +1,5 @@
 <project name="Abstract-Service-Library" default="dist" basedir=".">
-	<property name="version" value="2.4.3-java6" />
+	<property name="version" value="2.4.4-java6" />
 	<property name="abstract-service-library" value="abstract-service-library-${version}" />
 	<property name="build" location="build" />
 	<property name="dist" location="dist/${abstract-service-library}" />
@@ -16,7 +16,7 @@
 		<pathelement location="lib/jackson-core-2.3.0.jar" />
 		<pathelement location="lib/jackson-databind-2.3.0.jar" />
 		<pathelement location="lib/log4j-1.2.17.jar" />
-		<pathelement location="lib/ux-library-0.2.2.jar" />
+		<pathelement location="lib/ux-library-0.2.4.jar" />
 	</path>
 
 	<target name="init">
