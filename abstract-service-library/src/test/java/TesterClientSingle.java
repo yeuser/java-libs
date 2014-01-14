@@ -14,11 +14,11 @@ import com.google.gson.reflect.TypeToken;
 public class TesterClientSingle {
   public static void main(String[] args) throws Exception {
     PropertyConfigurator.configure("log4j-client.properties");
-    final int count = 1000;
+     int count = 1000;
     final Semaphore s = new Semaphore(1 - count);
     int concurrency = 100;
-    final String host = "127.0.0.1";
     int port = 15015;
+    String host = "127.0.0.1";
     final ServiceClient client = new ServiceClient(host, port, concurrency);
     Random random = new Random(System.currentTimeMillis());
     for (int i = 1; i <= count; i++) {

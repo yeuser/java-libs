@@ -38,7 +38,7 @@ public class TesterClientRush {
             TypeToken<Map<String, List<String>>> type4Return = new TypeToken<Map<String, List<String>>>() {
             };
             Map<String, List<String>> response3 = client.invokeServiceCommand(type4Return, "salam6", input);
-            //     Logger.getLogger(TesterClientRush.class).info(query + new GsonBuilder().setPrettyPrinting().create().toJson(response3));
+            Logger.getLogger(TesterClientRush.class).info(query + new GsonBuilder().setPrettyPrinting().create().toJson(response3));
             //            DataOut response = client.invokeServiceCommand(DataOut.class, "salam5", new DataIn(query, qi));
             //            Logger.getLogger(TesterClient.class).info(query + new GsonBuilder().setPrettyPrinting().create().toJson(response));
             client.close();
