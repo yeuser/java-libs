@@ -22,8 +22,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 /**
- * This is the Main Constructor Class of this service library.<br/>
- * To use this library create an instance of this class, then use {@link #create()} to start the service <h5>Example:</h5> <code>
+ * This is the Client Class of this service library.<br/>
+ * To use this library create an instance of Server class using {@link ServiceServerBuilder#create()} <br/>
+ * <h5>Client Side code:</h5> <code>
  *     &nbsp;&nbsp;&nbsp;ServiceClient client = new ServiceClient(host, port, concurrency);<br/>
  *     &nbsp;&nbsp;&nbsp;TypeToken&lt;ReturnObject&gt; type4Return = new TypeToken&lt;ReturnObject&gt;() {<br/>
  *     &nbsp;&nbsp;&nbsp;};<br/>
@@ -35,6 +36,8 @@ import com.google.gson.reflect.TypeToken;
  * </code>
  * 
  * @see ServiceServerBuilder
+ * @see ServiceServer
+ * @see SingleCommandServiceClient
  * @see WorkerFactory
  * @see Worker
  * @see MapCommand
