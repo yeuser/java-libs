@@ -40,7 +40,7 @@
     <property name="java.vm.specification.version" value="1.0"/>
     <property name="sun.arch.data.model" value="64"/>
     <property name="java.home" value="/usr/lib/jvm/java-6-openjdk-amd64/jre"/>
-    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher &quot;clean&quot; &quot;deploy&quot;"/>
+    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher &quot;deploy&quot;"/>
     <property name="java.specification.vendor" value="Sun Microsystems Inc."/>
     <property name="user.language" value="en"/>
     <property name="java.vm.info" value="mixed mode"/>

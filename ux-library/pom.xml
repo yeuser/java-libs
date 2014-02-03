@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.nise.ux.lib</groupId>
 	<artifactId>ux-library</artifactId>
-	<version>0.2.4</version>
+	<version>0.3.0</version>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -72,6 +72,14 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<configuration>
+					<downloadSources>true</downloadSources>
+					<downloadJavadocs>true</downloadJavadocs>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -85,6 +93,11 @@
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
 			<version>2.6</version>
+		</dependency>
+		<dependency>
+			<groupId>com.samanpr.jalalicalendar</groupId>
+			<artifactId>jalaliCalendar</artifactId>
+			<version>1.0.2</version>
 		</dependency>
 	</dependencies>
 </project>
