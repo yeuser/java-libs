@@ -11,6 +11,7 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.net.Socket;
 import java.nio.channels.ClosedChannelException;
+import java.security.InvalidParameterException;
 
 import org.apache.log4j.Logger;
 import org.nise.ux.asl.data.ServiceResponse;
@@ -269,11 +270,23 @@ public class DataStream implements Closeable {
     }
 
     private <RD> RD getRequestArg(String json_data, Type requestType) {
-      return new Gson().fromJson(json_data, requestType);
+      try {
+        return new Gson().fromJson(json_data, requestType);
+      } catch (Exception e) {
+        InvalidParameterException invalidParameterException = new InvalidParameterException("Expected " + requestType.toString() + " but got {" + json_data + "}");
+        invalidParameterException.initCause(e);
+        throw invalidParameterException;
+      }
     }
 
     private <RD> RD getRequestArg(String json_data, Class<RD> requestClass) {
-      return new Gson().fromJson(json_data, requestClass);
+      try {
+        return new Gson().fromJson(json_data, requestClass);
+      } catch (Exception e) {
+        InvalidParameterException invalidParameterException = new InvalidParameterException("Expected " + requestClass.toString() + " but got {" + json_data + "}");
+        invalidParameterException.initCause(e);
+        throw invalidParameterException;
+      }
     }
 
     @Override

@@ -70,26 +70,36 @@ class WorkerNode extends DistributerNode {
   }
 
   private void invoke(DataConnection dataConnection, String command) {
-    Method method = commandMethodMap.get(command);
-    Type[] input_args = method.getGenericParameterTypes();
-    Object[] args = dataConnection.getRequestArgs(input_args);
     try {
-      Object obj = methodInvoker(method, args);
-      LOGGER.trace("@worker= " + name + " invoked {{" + method.toString() + "}} with args=" + args + " & returned obj=" + obj);
+      Method method = commandMethodMap.get(command);
+      Type[] input_args = method.getGenericParameterTypes();
+      Object[] args = dataConnection.getRequestArgs(input_args);
       try {
-        dataConnection.send(ServiceResponse.getDataResponse(obj));
+        Object obj = methodInvoker(method, args);
+        LOGGER.trace("@worker= " + name + " invoked {{" + method.toString() + "}} with args=" + args + " & returned obj=" + obj);
+        try {
+          dataConnection.send(ServiceResponse.getDataResponse(obj));
+        } catch (Throwable t) {
+          LOGGER.error("@worker= " + name + " Error_message: " + t.getMessage(), t);
+        }
+        invokeAfter(command, obj, null, args);
+      } catch (InvocationTargetException ite) {
+        LOGGER.error("@worker= " + name + " Error_message: " + ite.getMessage(), ite);
+        try {
+          dataConnection.send(ServiceResponse.getThrowableResponse(ite.getCause()));
+        } catch (Throwable t2) {
+          LOGGER.error("@worker= " + name + " Error_message: " + t2.getMessage(), t2);
+        }
+        invokeAfter(command, null, ite.getCause(), args);
       } catch (Throwable t) {
         LOGGER.error("@worker= " + name + " Error_message: " + t.getMessage(), t);
+        try {
+          dataConnection.send(ServiceResponse.getThrowableResponse(t));
+        } catch (Throwable t2) {
+          LOGGER.error("@worker= " + name + " Error_message: " + t2.getMessage(), t2);
+        }
+        invokeAfter(command, null, t, args);
       }
-      invokeAfter(command, obj, null, args);
-    } catch (InvocationTargetException ite) {
-      LOGGER.error("@worker= " + name + " Error_message: " + ite.getMessage(), ite);
-      try {
-        dataConnection.send(ServiceResponse.getThrowableResponse(ite.getCause()));
-      } catch (Throwable t2) {
-        LOGGER.error("@worker= " + name + " Error_message: " + t2.getMessage(), t2);
-      }
-      invokeAfter(command, null, ite.getCause(), args);
     } catch (Throwable t) {
       LOGGER.error("@worker= " + name + " Error_message: " + t.getMessage(), t);
       try {
@@ -97,7 +107,6 @@ class WorkerNode extends DistributerNode {
       } catch (Throwable t2) {
         LOGGER.error("@worker= " + name + " Error_message: " + t2.getMessage(), t2);
       }
-      invokeAfter(command, null, t, args);
     }
   }
 
@@ -292,7 +301,7 @@ class WorkerNode extends DistributerNode {
                 + " and queueMean=" + queueMean//
             );
       }
-   //   refresh(countToValue);
+      //   refresh(countToValue);
     }
 
     public void refresh(int count) {
