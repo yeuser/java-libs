@@ -24,9 +24,12 @@ public class TesterClientSingle {
         @Override
         public void run() {
           try {
-            DataOut response = client.invokeServiceCommand(DataOut.class, "salam", new DataIn(query, qi));
+            DataOut2 response = client.invokeServiceCommand(DataOut2.class, "salam14", query, qi);
             Logger.getLogger(TesterClientSingle.class).info(query + new GsonBuilder().setPrettyPrinting().create().toJson(response));
-            assert response.to == qi;
+            assert response.to2 == qi;
+            response = client.invokeServiceCommand(DataOut2.class, "salam14", query);
+            Logger.getLogger(TesterClientSingle.class).info(query + new GsonBuilder().setPrettyPrinting().create().toJson(response));
+            assert response.to2 == 22;
             //            // DataOut2 response2 = client.invokeServiceCommand(DataOut2.class, "salam2", new DataIn2(query, qi));
             //            // Logger.getLogger(TesterClientSingle.class).info(query + new GsonBuilder().setPrettyPrinting().create().toJson(response2));
             //            List<String> input = new ArrayList<String>();

@@ -291,23 +291,36 @@ public class DataStream implements Closeable {
 
     @Override
     public Object[] getRequestArgs(Type[] requestTypes) {
+      return getRequestArgs(requestTypes, new Object[] {});
+    }
+
+    @Override
+    public Object[] getRequestArgs(Type[] requestTypes, Object[] defaultValues) {
       String[] json_datas = new Gson().fromJson(json_data, new TypeToken<String[]>() {
       }.getType());
-      if (requestTypes.length != json_datas.length) {
+      if (requestTypes.length > defaultValues.length + json_datas.length) {
         return null;
       }
-      Object[] args = new Object[json_datas.length];
-      for (int i = 0; i < args.length; i++) {
+      Object[] args = new Object[requestTypes.length];
+      for (int i = 0; i < json_datas.length; i++) {
         args[i] = getRequestArg(json_datas[i], requestTypes[i]);
+      }
+      for (int i = json_datas.length; i < args.length; i++) {
+        args[i] = defaultValues[args.length - i - 1];
       }
       return args;
     }
 
     @Override
     public Object[] getRequestArgs(Class<?>[] requestClasses) {
+      return getRequestArgs(requestClasses, new Object[] {});
+    }
+
+    @Override
+    public Object[] getRequestArgs(Class<?>[] requestClasses, Object[] defaultValues) {
       String[] json_datas = new Gson().fromJson(json_data, new TypeToken<String[]>() {
       }.getType());
-      if (requestClasses.length != json_datas.length) {
+      if (requestClasses.length > defaultValues.length + json_datas.length) {
         return null;
       }
       Object[] args = new Object[json_datas.length];

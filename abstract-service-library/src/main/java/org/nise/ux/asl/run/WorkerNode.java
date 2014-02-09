@@ -1,5 +1,6 @@
 package org.nise.ux.asl.run;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.nise.ux.asl.data.CommandChain;
+import org.nise.ux.asl.data.DefaultValue;
 import org.nise.ux.asl.data.MapCommand;
 import org.nise.ux.asl.data.ServiceResponse;
 import org.nise.ux.asl.face.DataConnection;
@@ -21,8 +23,9 @@ import com.google.gson.Gson;
 
 class WorkerNode extends DistributerNode {
   private static final Logger         LOGGER                = Logger.getLogger(WorkerNode.class);
-  private Map<String, Method>         commandMethodMap      = new HashMap<String, Method>();
-  private Map<String, Method>         commandTestMethodMap  = new HashMap<String, Method>();
+  private final Gson                  GSON                  = new Gson();
+  private Map<String, MethodInfo>     commandMethodMap      = new HashMap<String, MethodInfo>();
+  private Map<String, MethodInfo>     commandTestMethodMap  = new HashMap<String, MethodInfo>();
   private Map<String, List<Method>>   commandChainMethodMap = new HashMap<String, List<Method>>();
   private Worker                      worker;
   private String                      name;
@@ -36,9 +39,9 @@ class WorkerNode extends DistributerNode {
         LOGGER.debug("Annotation MapCommand in Method " + method + " : ");
         MapCommand methodAnno = method.getAnnotation(MapCommand.class);
         if (methodAnno.test()) {
-          commandTestMethodMap.put(methodAnno.command(), method);
+          putMethodIntoMap(commandTestMethodMap, methodAnno.command(), method);
         } else {
-          commandMethodMap.put(methodAnno.command(), method);
+          putMethodIntoMap(commandMethodMap, methodAnno.command(), method);
         }
       }
       if (method.isAnnotationPresent(CommandChain.class)) {
@@ -53,15 +56,51 @@ class WorkerNode extends DistributerNode {
     this.worker = worker;
   }
 
+  private void putMethodIntoMap(Map<String, MethodInfo> map, String command, Method method) {
+    MethodInfo methodInfo = generateMethodInfo(method);
+    map.put(command, methodInfo);
+  }
+
+  private MethodInfo generateMethodInfo(Method method) {
+    Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+    Type[] input_args = method.getGenericParameterTypes();
+    List<Object> dvs = new ArrayList<Object>();
+    for (int i = parameterAnnotations.length - 1; i >= 0; i--) {
+      boolean has = false;
+      for (int j = 0; j < parameterAnnotations[i].length; j++) {
+        if (parameterAnnotations[i][j] instanceof DefaultValue) {
+          dvs.add(GSON.fromJson(((DefaultValue) parameterAnnotations[i][j]).value(), input_args[i]));
+          has = true;
+        }
+      }
+      if (!has) {
+        break;
+      }
+    }
+    return new MethodInfo(method, input_args, dvs.toArray());
+  }
+
+  class MethodInfo {
+    Method   method;
+    Type[]   input_args;
+    Object[] dvs;
+
+    public MethodInfo(Method method, Type[] input_args, Object[] dvs) {
+      this.method = method;
+      this.input_args = input_args;
+      this.dvs = dvs;
+    }
+  }
+
   @Override
   protected void handleDataConnection(DataConnection dataConnection) {
     String command = dataConnection.getCommand();
-    Method method = commandMethodMap.get(command);
-    if (method != null) {
+    MethodInfo methodInfo = commandMethodMap.get(command);
+    if (methodInfo != null) {
       invoke(dataConnection, command);
     } else {
-      method = commandMethodMap.get(MapCommand.COMMAND_DEFAULT);
-      if (method != null) {
+      methodInfo = commandMethodMap.get(MapCommand.COMMAND_DEFAULT);
+      if (methodInfo != null) {
         invoke(dataConnection, command);
       } else {
         super.handleDataConnection(dataConnection);
@@ -71,12 +110,11 @@ class WorkerNode extends DistributerNode {
 
   private void invoke(DataConnection dataConnection, String command) {
     try {
-      Method method = commandMethodMap.get(command);
-      Type[] input_args = method.getGenericParameterTypes();
-      Object[] args = dataConnection.getRequestArgs(input_args);
+      MethodInfo methodInfo = commandMethodMap.get(command);
+      Object[] args = dataConnection.getRequestArgs(methodInfo.input_args, methodInfo.dvs);
       try {
-        Object obj = methodInvoker(method, args);
-        LOGGER.trace("@worker= " + name + " invoked {{" + method.toString() + "}} with args=" + args + " & returned obj=" + obj);
+        Object obj = methodInvoker(methodInfo.method, args);
+        LOGGER.trace("@worker= " + name + " invoked {{" + methodInfo.method.toString() + "}} with args=" + args + " & returned obj=" + obj);
         try {
           dataConnection.send(ServiceResponse.getDataResponse(obj));
         } catch (Throwable t) {
@@ -117,7 +155,7 @@ class WorkerNode extends DistributerNode {
         LOGGER.trace("@worker= " + name + " invoking {{" + method.toString() + "}} with args={" + args + "}");
         Object ret = method.invoke(worker, args);
         if (hadError) {
-          LOGGER.error("@worker= " + name + " invoke succeeded {{" + method.toString() + "}} with args={" + new Gson().toJson(args) + "}");
+          LOGGER.error("@worker= " + name + " invoke succeeded {{" + method.toString() + "}} with args={" + GSON.toJson(args) + "}");
         }
         return ret;
       } catch (InvocationTargetException e) {
@@ -140,7 +178,7 @@ class WorkerNode extends DistributerNode {
           LOGGER.error("@worker= " + name + " invoking {{" + method.toString() + "}} with {args=null}");
           return null;
         }
-        LOGGER.error("@worker= " + name + " invoking {{" + method.toString() + "}} with args={" + new Gson().toJson(args) + "}", t);
+        LOGGER.error("@worker= " + name + " invoking {{" + method.toString() + "}} with args={" + GSON.toJson(args) + "}", t);
         Thread.yield();
       }
     }

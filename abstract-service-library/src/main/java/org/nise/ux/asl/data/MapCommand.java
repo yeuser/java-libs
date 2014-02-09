@@ -1,7 +1,9 @@
 package org.nise.ux.asl.data;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Annotation to map commands with their handler functions,
@@ -21,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
  * @author Yaser Eftekhari ( ^ - ^ )
  */
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
 public @interface MapCommand {
   public static final String COMMAND_DEFAULT = "@default";
 

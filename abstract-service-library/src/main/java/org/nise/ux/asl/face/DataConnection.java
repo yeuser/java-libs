@@ -12,4 +12,8 @@ public interface DataConnection {
   public Object[] getRequestArgs(Type[] requestTypes);
 
   public Object[] getRequestArgs(Class<?>[] requestClasses);
+
+  public Object[] getRequestArgs(Type[] requestTypes, Object[] defaultValues);
+
+  public Object[] getRequestArgs(Class<?>[] requestClasses, Object[] defaultValues);
 }
