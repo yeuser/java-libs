@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 import org.nise.ux.asl.data.ServiceException;
 import org.nise.ux.asl.data.ServiceResponse;
 import org.nise.ux.asl.face.DataConnection;
+import org.nise.ux.asl.face.ServiceClient;
 import org.nise.ux.asl.lib.DataStream;
 import org.nise.ux.lib.Living;
 
@@ -56,19 +57,32 @@ class RequestFetcherNode extends Living {
       try {
         DataConnection dataConnection = dataStream.extractCommand();
         while (dataConnection != null) {
-          boolean has_handler = false;
-          String command = dataConnection.getCommand();
-          for (QueueFace<DataConnection> consumerQueue : consumersQueue) {
-            if (consumerQueue.hasCommand(command)) {
-              has_handler = true;
-              while (!consumerQueue.push(dataConnection)) {
-                // Waiting System in Queue couldn't handle something, we handle it here.
-                // Possibility of this kind of error is one in million...
+          if (dataConnection.isHelp() && dataConnection.getCommand().equals(ServiceClient.HELP_GET_COMMAND_SETS)) {
+            List<String> commandSet = new ArrayList<String>();
+            for (QueueFace<DataConnection> consumerQueue : consumersQueue) {
+              String[] commands = consumerQueue.getCommands();
+              for (String command : commands) {
+                if (!commandSet.contains(command)) {
+                  commandSet.add(command);
+                }
               }
             }
-          }
-          if (!has_handler) {
-            dataConnection.send(ServiceResponse.getThrowableResponse(new ServiceException("Server has no implementation for command `" + command + "`")));
+            dataConnection.send(ServiceResponse.getDataResponse(commandSet));
+          } else {
+            boolean has_handler = false;
+            String command = dataConnection.getCommand();
+            for (QueueFace<DataConnection> consumerQueue : consumersQueue) {
+              if (consumerQueue.hasCommand(command)) {
+                has_handler = true;
+                while (!consumerQueue.push(dataConnection)) {
+                  // Waiting System in Queue couldn't handle something, we handle it here.
+                  // Possibility of this kind of error is one in million...
+                }
+              }
+            }
+            if (!has_handler) {
+              dataConnection.send(ServiceResponse.getThrowableResponse(new ServiceException("Server has no implementation for command `" + command + "`")));
+            }
           }
           dataConnection = dataStream.extractCommand();
         }

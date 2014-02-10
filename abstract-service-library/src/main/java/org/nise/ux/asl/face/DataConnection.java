@@ -7,6 +7,8 @@ public interface DataConnection {
 
   public int getIndex();
 
+  public boolean isHelp();
+
   public <SD> void send(SD data) throws Exception;
 
   public Object[] getRequestArgs(Type[] requestTypes);

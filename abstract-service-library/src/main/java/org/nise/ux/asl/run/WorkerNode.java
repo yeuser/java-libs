@@ -15,6 +15,7 @@ import org.nise.ux.asl.data.DefaultValue;
 import org.nise.ux.asl.data.MapCommand;
 import org.nise.ux.asl.data.ServiceResponse;
 import org.nise.ux.asl.face.DataConnection;
+import org.nise.ux.asl.face.ServiceClient;
 import org.nise.ux.asl.face.Worker;
 import org.nise.ux.lib.Living;
 import org.nise.ux.lib.RoundQueue;
@@ -97,13 +98,57 @@ class WorkerNode extends DistributerNode {
     String command = dataConnection.getCommand();
     MethodInfo methodInfo = commandMethodMap.get(command);
     if (methodInfo != null) {
-      invoke(dataConnection, command);
+      if (dataConnection.isHelp()) {
+        help(dataConnection, command);
+      } else {
+        invoke(dataConnection, command);
+      }
     } else {
       methodInfo = commandMethodMap.get(MapCommand.COMMAND_DEFAULT);
       if (methodInfo != null) {
-        invoke(dataConnection, command);
+        if (dataConnection.isHelp()) {
+          help(dataConnection, command);
+        } else {
+          invoke(dataConnection, command);
+        }
       } else {
         super.handleDataConnection(dataConnection);
+      }
+    }
+  }
+
+  private void help(DataConnection dataConnection, String command) {
+    MethodInfo methodInfo = commandMethodMap.get(command);
+    Object[] args = dataConnection.getRequestArgs(new Class[] { int.class }, new Object[] { null, });
+    if (args[0] == null) {
+      try {
+        dataConnection.send(ServiceResponse.getThrowableResponse(new IllegalArgumentException("Help type is UnKnown!")));
+      } catch (Throwable t) {
+        LOGGER.error("@worker= " + name + " Error_message: " + t.getMessage(), t);
+      }
+    } else {
+      switch ((Integer) args[0]) {
+        case ServiceClient.HELP_DESCRIBE_COMMAND:
+          Class<?> class1 = methodInfo.method.getReturnType();
+          List<String> type_strings = new ArrayList<String>();
+          type_strings.add(class1.getName());
+          Class<?>[] classes = methodInfo.method.getParameterTypes();
+          for (Class<?> class2 : classes) {
+            type_strings.add(class2.getName());
+          }
+          try {
+            dataConnection.send(ServiceResponse.getDataResponse(type_strings));
+          } catch (Throwable t) {
+            LOGGER.error("@worker= " + name + " Error_message: " + t.getMessage(), t);
+          }
+          break;
+        default:
+          try {
+            dataConnection.send(ServiceResponse.getThrowableResponse(new IllegalArgumentException("Help type is UnKnown!")));
+          } catch (Throwable t) {
+            LOGGER.error("@worker= " + name + " Error_message: " + t.getMessage(), t);
+          }
+          break;
       }
     }
   }

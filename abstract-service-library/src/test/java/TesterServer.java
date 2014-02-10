@@ -25,22 +25,22 @@ public class TesterServer {
       }
     }, "worker2");
     final ServiceServer serviceServer = server.create();
-    new Thread() {
-      public void run() {
-        while (true) {
-          Map<String, String> stats = serviceServer.getAllStats();
-          Set<String> keySet = stats.keySet();
-          for (String key : keySet) {
-            System.out.println(key + ": " + stats.get(key));
-          }
-          try {
-            Thread.sleep(5 * 1000);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        }
-      }
-    }.start();
+//    new Thread() {
+//      public void run() {
+//        while (true) {
+//          Map<String, String> stats = serviceServer.getAllStats();
+//          Set<String> keySet = stats.keySet();
+//          for (String key : keySet) {
+//            System.out.println(key + ": " + stats.get(key));
+//          }
+//          try {
+//            Thread.sleep(5 * 1000);
+//          } catch (InterruptedException e) {
+//            e.printStackTrace();
+//          }
+//        }
+//      }
+//    }.start();
   }
 }
 

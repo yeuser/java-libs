@@ -3,7 +3,7 @@ import java.util.concurrent.Semaphore;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.nise.ux.asl.run.ServiceClient;
+import org.nise.ux.asl.run.ParallelServiceClient;
 
 import com.google.gson.GsonBuilder;
 
@@ -15,7 +15,7 @@ public class TesterClientSingle {
     int concurrency = 100;
     int port = 15015;
     String host = "127.0.0.1";
-    final ServiceClient client = new ServiceClient(host, port, concurrency);
+    final ParallelServiceClient client = new ParallelServiceClient(host, port, concurrency);
     Random random = new Random(System.currentTimeMillis());
     for (int i = 1; i <= count; i++) {
       final int qi = random.nextInt();

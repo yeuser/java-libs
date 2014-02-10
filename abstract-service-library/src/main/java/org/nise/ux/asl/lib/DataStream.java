@@ -48,10 +48,20 @@ public class DataStream implements Closeable {
 
   //VERSION 2//-2 {VERSION==2} {INDEX} {COMMAND} {JSON}
   public void sendCommand(int index, String command, Object... data) throws IOException {
+    sendCommand(false, index, command, data);
+  }
+
+  //VERSION 2 simple //-2 {VERSION==2} {INDEX} {COMMAND} {JSON}
+  //VERSION 2 helping//-3 {VERSION==2} {INDEX} {COMMAND} {JSON}
+  public void sendCommand(boolean helping, int index, String command, Object... data) throws IOException {
     if (closed)
       throw new ClosedChannelException();
     StringBuilder sb = new StringBuilder();
-    sb.append("-2 2 ");
+    if (helping) {
+      sb.append("-3 2 ");
+    } else {
+      sb.append("-2 2 ");
+    }
     sb.append(index);
     sb.append(' ');
     sb.append(command);
@@ -122,8 +132,9 @@ public class DataStream implements Closeable {
       String intPart = line.substring(0, i);
       order = Integer.parseInt(intPart);
       line = line.substring(i + 1).trim();
-      if (order == -2) {
-        //VERSION 2//-2 {VERSION} ...
+      if (order == -2 || order == -3) {
+        //VERSION 2 simple command//-2 {VERSION} ...
+        //VERSION 2 help command//-3 {VERSION} ...
         i = line.indexOf(' ');
         if (i == -1) {
           this.close();
@@ -133,7 +144,8 @@ public class DataStream implements Closeable {
         line = line.substring(i + 1).trim();
         int version = Integer.parseInt(versionPart);
         if (version == 2) {
-          //VERSION 2//-2 {VERSION==2} {INDEX} {COMMAND} {JSON}
+          //VERSION 2 simple command//-2 {VERSION==2} {INDEX} {COMMAND} {JSON}
+          //VERSION 2 help command//-3 {VERSION==2} {INDEX} {COMMAND} {JSON}
           i = line.indexOf(' ');
           if (i == -1) {
             this.close();
@@ -148,7 +160,7 @@ public class DataStream implements Closeable {
           }
           String commandPart = line.substring(0, i);
           line = line.substring(i + 1).trim();
-          return new DataConnectionImpl(this, commandPart, line, Integer.parseInt(indexPart));
+          return new DataConnectionImpl(this, commandPart, line, Integer.parseInt(indexPart), order == -3);
         }
         //UNKNOWN VERSION
         return null;
@@ -236,12 +248,18 @@ public class DataStream implements Closeable {
     private final String     command;
     private final DataStream dataStream;
     private final int        index;
+    private final boolean    helping;
 
     public DataConnectionImpl(DataStream dataStream, String command, String json_data, int index) {
+      this(dataStream, command, json_data, index, false);
+    }
+
+    public DataConnectionImpl(DataStream dataStream, String command, String json_data, int index, boolean isHelp) {
       this.dataStream = dataStream;
       this.json_data = json_data;
       this.command = command;
       this.index = index;
+      this.helping = isHelp;
     }
 
     @Override
@@ -261,6 +279,11 @@ public class DataStream implements Closeable {
     @Override
     public int getIndex() {
       return index;
+    }
+
+    @Override
+    public boolean isHelp() {
+      return helping;
     }
 
     @Override

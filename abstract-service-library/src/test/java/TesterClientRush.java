@@ -6,7 +6,7 @@ import java.util.concurrent.Semaphore;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.nise.ux.asl.run.ServiceClient;
+import org.nise.ux.asl.run.ParallelServiceClient;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -26,9 +26,9 @@ public class TesterClientRush {
       Thread th = new Thread() {
         @Override
         public void run() {
-          ServiceClient client = null;
+          ParallelServiceClient client = null;
           try {
-            client = new ServiceClient(host, port, concurrency);
+            client = new ParallelServiceClient(host, port, concurrency);
             //             DataOut2 response2 = client.invokeServiceCommand(DataOut2.class, "salam2", new DataIn2(query, qi));
             //             Logger.getLogger(TesterClientRush.class).info(query + new GsonBuilder().setPrettyPrinting().create().toJson(response2));
             List<String> input = new ArrayList<String>();
