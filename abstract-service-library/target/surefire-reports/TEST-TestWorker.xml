@@ -29,7 +29,7 @@
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="java.class.version" value="50.0"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
-    <property name="os.version" value="3.2.0-57-generic"/>
+    <property name="os.version" value="3.2.0-58-generic"/>
     <property name="user.home" value="/home/ye"/>
     <property name="user.timezone" value="Asia/Tehran"/>
     <property name="java.awt.printerjob" value="sun.print.PSPrinterJob"/>
@@ -40,7 +40,7 @@
     <property name="java.vm.specification.version" value="1.0"/>
     <property name="sun.arch.data.model" value="64"/>
     <property name="java.home" value="/usr/lib/jvm/java-6-openjdk-amd64/jre"/>
-    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher &quot;deploy&quot;"/>
+    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher &quot;clean&quot; &quot;compile&quot; &quot;deploy&quot;"/>
     <property name="java.specification.vendor" value="Sun Microsystems Inc."/>
     <property name="user.language" value="en"/>
     <property name="java.vm.info" value="mixed mode"/>
