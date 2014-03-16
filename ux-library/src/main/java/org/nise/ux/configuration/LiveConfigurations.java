@@ -6,8 +6,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.lang.management.ManagementFactory;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.apache.log4j.Logger;
 import org.nise.ux.lib.Living;
@@ -30,6 +34,15 @@ public class LiveConfigurations extends FileConfigurations implements Runnable {
     output = new OutputProfiler();
     System.setErr(new PrintStream(output));
     System.setOut(new PrintStream(output));
+    try {
+      MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+      ObjectName name = new ObjectName(LiveConfigurations.class.getPackage().getName() + ":type=" + LiveConfigurations.class.getSimpleName());
+      ConfigurationMXBean mbean = this;
+      mbs.registerMBean(mbean, name);
+      Logger.getLogger(LiveConfigurations.class).info("ConfigurationMXBean successfully registered.");
+    } catch (Throwable t) {
+      Logger.getLogger(LiveConfigurations.class).error("Problem: registering ConfigurationMXBean successfully.", t);
+    }
     final LiveConfigurations this_config = this;
     // Start Listening on CONFIG port.
     new Thread(this, "Live-Configuration-Thread").start();
