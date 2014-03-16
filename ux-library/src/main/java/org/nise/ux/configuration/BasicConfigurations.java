@@ -80,13 +80,13 @@ public class BasicConfigurations implements ConfigurationMXBean {
   }
 
   @Override
-  public final ArrayList<String> getAllConfigKeys(String prefix) {
+  public final String[] getAllConfigKeys(String prefix) {
     ArrayList<String> keys = new ArrayList<String>();
     for (int i = 0; i < ALL_KEYS_DEFUALTS.length; i++) {
       if (ALL_KEYS_DEFUALTS[i][0].startsWith(prefix))
         keys.add(ALL_KEYS_DEFUALTS[i][0]);
     }
-    return keys;
+    return keys.toArray(new String[0]);
   }
 
   /**

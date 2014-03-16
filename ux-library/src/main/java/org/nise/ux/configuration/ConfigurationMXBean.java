@@ -1,11 +1,9 @@
 package org.nise.ux.configuration;
 
-import java.util.ArrayList;
-
 public interface ConfigurationMXBean {
   public String[] getAllConfigurationKeys();
 
-  public ArrayList<String> getAllConfigKeys(String prefix);
+  public String[] getAllConfigKeys(String prefix);
 
   /**
    * مقدار تنظيمات مربوط به يک پارامتر خاص را برمی‌گرداند
