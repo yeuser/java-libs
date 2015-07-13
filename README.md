@@ -3,8 +3,10 @@ Abstract Service Library
 Abstract Service Library or ASL is a socket based replacement for restful libraries with consideration for high throughput and high concurrancy.
 ASL uses json as the means of transfering objects and newlines as message separator.
 
-For a quick start see javadocs and the code below:
+For a quick start see javadocs, sample code and the below explainations:
+
 [javadocs for ASL](https://yeuser.github.io/java-libs/abstract-service-library/dist/abstract-service-library-2.4.4-java6/api/)
+
 [Sample Code in Test Folder](https://github.com/yeuser/java-libs/blob/master/abstract-service-library/src/test/java/)
 
 Class ```org.nise.ux.asl.run.ServiceServerBuilder``` is used for creating a server listener and starting server.
