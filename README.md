@@ -5,7 +5,8 @@ ASL uses json as the means of transfering objects and newlines as message separa
 
 For a quick start see javadocs, sample code and the below explainations:
 
-[javadocs for ASL](https://yeuser.github.io/java-libs/abstract-service-library/dist/abstract-service-library-2.4.4-java6/api/)
+[javadocs for ASL](https://yeuser.github.io/java-libs/abstract-service-library/dist/abstract-service-library-2.4.5-java6/api/)
+[latest release](https://github.com/yeuser/java-libs/tree/master/abstract-service-library/dist/abstract-service-library-2.4.5-java6)
 
 [Sample Code in Test Folder](https://github.com/yeuser/java-libs/blob/master/abstract-service-library/src/test/java/)
 
